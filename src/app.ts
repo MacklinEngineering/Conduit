@@ -5,8 +5,10 @@ import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import * as couchbase from 'couchbase';
+import jwt from 'jsonwebtoken';
 
 import {connectToDatabase} from './db/connection';
+import { userInfo } from 'os';
 
 const swaggerDocument = YAML.load('./swagger.yaml');
 
@@ -17,7 +19,7 @@ app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
 app.use('/swagger-ui', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-app.get('/', (req: any, res: {send: (arg0: string) => void}) => {
+app.get('/', (req: Request, res: Response) => {
   res.send(
     '<body onload="window.location = \'/swagger-ui/\'"><a href="/swagger-ui/">Click here to see the API</a>'
   );
@@ -27,6 +29,7 @@ export const ensureIndexes = async () => {
   const {cluster} = await connectToDatabase();
 
   const bucketIndex = `CREATE PRIMARY INDEX ON ${process.env.CB_BUCKET}`;
+  const usersCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.users;`;
   const profileCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.profile;`;
   const articleCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.article;`;
   const commentCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.comment;`;
@@ -57,6 +60,66 @@ export const ensureIndexes = async () => {
     }
   }
 };
+
+app.post('/users', async (req: Request, res: Response) => {
+  console.log("Hitting users endpoint")
+  const {usersCollection} = await connectToDatabase();
+  console.log(usersCollection, "USERS COLLECTION")
+
+  const username = req.body.username;
+  const user = {name : username}
+  const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET)
+  res.json({accessToken: accessToken})
+
+  if (!req.body.email || !req.body.pass) {
+    return res.status(400).send({
+      message: `${!req.body.email ? 'email ' : ''}${
+        !req.body.email && !req.body.pass
+          ? 'and pass are required'
+          : req.body.email && !req.body.pass
+          ? 'pass is required'
+          : 'is required'
+      }`,
+    });
+  }
+
+  const id = v4();
+  const users = {
+    pid: id,
+    ...req.body,
+    pass: bcrypt.hashSync(req.body.pass, 10),
+  };
+  console.log(users, "USERS")
+
+  await usersCollection
+    .insert(id, users)
+    .then((result: any) => {
+      return res.send({...users, ...result});
+    })
+    .catch((e: {message: any}) => {
+      return res.status(500).send({
+        message: `User Insert Failed: ${e.message}`,
+      });
+    });
+
+    return res.send()
+    // // return res.status(500)
+    // return res.status(500).send({
+    //   message: `Something went wrong}`,
+    // });
+});
+
+function authenticateToken(req, res, next){
+  const authHeader = req.headers['authorization']
+  const token = authHeader && authHeader.split(' ')[1]
+  if (token == null) return res.sendStatus(401)
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user)=> {
+    if (err) return res.sendStatus(403)
+    req.user = user
+    next()
+  })
+}
 
 app.post('/profile', async (req: Request, res: Response) => {
   console.log("Hitting profile endpoint")

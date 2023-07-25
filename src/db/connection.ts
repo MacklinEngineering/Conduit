@@ -85,6 +85,7 @@ export async function connectToDatabase() {
   console.log("This is the cluster, ", cluster)
   const bucket = cluster.bucket(CB_BUCKET);
   const collection = bucket.defaultCollection();
+  const usersCollection = bucket.collection('users');
   const profileCollection = bucket.collection('profile');
   const articleCollection = bucket.collection('article');
   const commentCollection = bucket.collection('comment');
@@ -93,6 +94,7 @@ export async function connectToDatabase() {
     cluster,
     bucket,
     collection,
+    usersCollection,
     profileCollection,
     articleCollection,
     commentCollection
