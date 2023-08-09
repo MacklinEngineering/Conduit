@@ -42,25 +42,27 @@ if (!IS_CAPELLA) {
  * in development. This prevents connections growing exponentially
  * during API Route usage.
  */
-
+console.log("hi")
 let cached = cache.get('couchbase')
 
 if (!cached) {
   cache.set('couchbase',  { conn: null })
   cached =cache.get('couchbase')
 }
-
+console.log("before createCouchbaseCluster")
+console.log(IS_CAPELLA)
 async function createCouchbaseCluster() {
+  console.log("createCouchbaseCluster")
   if (cached.conn) {
     return cached.conn
   }
-
+  console.log(IS_CAPELLA)
   if (IS_CAPELLA === 'true') {
     // Capella requires TLS connection string but we'll skip certificate verification with `tls_verify=none`
 
     try {
       // cached.conn = await couchbase.connect('couchbases://' + CB_URL + '?tls_verify=none', {
-      cached.conn = await couchbase.connect("couchbases://cb.rukgaw1nykyfmkr1.cloud.couchbase.com?tls_verify=none",{
+      cached.conn = await couchbase.connect("couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com?tls_verify=none",{
       username: CB_USER,
       password: CB_PASS,
     })
@@ -70,7 +72,7 @@ async function createCouchbaseCluster() {
   } else {
     // no TLS needed, use traditional connection string
     // cached.conn = await couchbase.connect('couchbase://' + CB_URL, {
-      cached.conn = await couchbase.connect('couchbases://cb.rukgaw1nykyfmkr1.cloud.couchbase.com', {
+      cached.conn = await couchbase.connect('couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com', {
       username: CB_USER,
       password: CB_PASS,
     })
@@ -102,6 +104,9 @@ export async function connectToDatabase() {
 
   return dbConnection;
 }
+
+createCouchbaseCluster()
+connectToDatabase()
 
 
 

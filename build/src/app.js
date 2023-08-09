@@ -34,6 +34,7 @@ const cors_1 = __importDefault(require("cors"));
 const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
 const yamljs_1 = __importDefault(require("yamljs"));
 const couchbase = __importStar(require("couchbase"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const connection_1 = require("./db/connection");
 const swaggerDocument = yamljs_1.default.load('./swagger.yaml');
 exports.app = (0, express_1.default)();
@@ -48,6 +49,7 @@ exports.app.get('/', (req, res) => {
 const ensureIndexes = async () => {
     const { cluster } = await (0, connection_1.connectToDatabase)();
     const bucketIndex = `CREATE PRIMARY INDEX ON ${process.env.CB_BUCKET}`;
+    const usersCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.users;`;
     const profileCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.profile;`;
     const articleCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.article;`;
     const commentCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.comment;`;
@@ -80,6 +82,58 @@ const ensureIndexes = async () => {
     }
 };
 exports.ensureIndexes = ensureIndexes;
+exports.app.post('/users', async (req, res) => {
+    console.log("Hitting users endpoint");
+    const { usersCollection } = await (0, connection_1.connectToDatabase)();
+    console.log(usersCollection, "USERS COLLECTION");
+    const username = req.body.username;
+    const user = { name: username };
+    const accessToken = jsonwebtoken_1.default.sign(user, process.env.ACCESS_TOKEN_SECRET);
+    res.json({ accessToken: accessToken });
+    if (!req.body.email || !req.body.pass) {
+        return res.status(400).send({
+            message: `${!req.body.email ? 'email ' : ''}${!req.body.email && !req.body.pass
+                ? 'and pass are required'
+                : req.body.email && !req.body.pass
+                    ? 'pass is required'
+                    : 'is required'}`,
+        });
+    }
+    const id = (0, uuid_1.v4)();
+    const users = {
+        pid: id,
+        ...req.body,
+        pass: bcryptjs_1.default.hashSync(req.body.pass, 10),
+    };
+    console.log(users, "USERS");
+    await usersCollection
+        .insert(id, users)
+        .then((result) => {
+        return res.send({ ...users, ...result });
+    })
+        .catch((e) => {
+        return res.status(500).send({
+            message: `User Insert Failed: ${e.message}`,
+        });
+    });
+    return res.send();
+    // // return res.status(500)
+    // return res.status(500).send({
+    //   message: `Something went wrong}`,
+    // });
+});
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token == null)
+        return res.sendStatus(401);
+    jsonwebtoken_1.default.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+        if (err)
+            return res.sendStatus(403);
+        req.user = user;
+        next();
+    });
+}
 exports.app.post('/profile', async (req, res) => {
     console.log("Hitting profile endpoint");
     const { profileCollection } = await (0, connection_1.connectToDatabase)();

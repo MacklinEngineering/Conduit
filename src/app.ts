@@ -6,14 +6,13 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import * as couchbase from 'couchbase';
 import jwt from 'jsonwebtoken';
-
 import {connectToDatabase} from './db/connection';
 import { userInfo } from 'os';
 
 const swaggerDocument = YAML.load('./swagger.yaml');
 
 export const app = express();
-console.log("app is running")
+console.log("app is HUR")
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
@@ -24,15 +23,17 @@ app.get('/', (req: Request, res: Response) => {
     '<body onload="window.location = \'/swagger-ui/\'"><a href="/swagger-ui/">Click here to see the API</a>'
   );
 });
-
+console.log("about to enter ensureIndexes")
 export const ensureIndexes = async () => {
+
+console.log("entered ensureIndexes")
   const {cluster} = await connectToDatabase();
 
   const bucketIndex = `CREATE PRIMARY INDEX ON ${process.env.CB_BUCKET}`;
   const usersCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.users;`;
-  const profileCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.profile;`;
-  const articleCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.article;`;
-  const commentCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.comment;`;
+  const profileCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.profiles;`;
+  const articleCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.articles;`;
+  const commentCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.tags;`;
 
   try {
     await cluster.query(bucketIndex);
@@ -46,14 +47,14 @@ export const ensureIndexes = async () => {
   }
 
   try {
-    await cluster.query(profileCollectionIndex);
-    console.log('Collection Index Creation: SUCCESS');
+    await cluster.query(usersCollectionIndex);
+    console.log('Users Index Creation: SUCCESS');
   } catch (err) {
     if (err instanceof couchbase.IndexExistsError) {
-      console.info('Collection Index Creation: Index Already Exists');
+      console.info('Users Index Creation: Index Already Exists');
     } else if (err instanceof couchbase.PlanningFailureError) {
       console.info(
-        'Collection Index Creation: Profile Collection Not Found. Ensure collection `profile` exists.'
+        'Collection Index Creation: Users Collection Not Found. Ensure collection `users` exists.'
       );
     } else {
       console.log(err);
@@ -562,5 +563,5 @@ app.get('/profile/article/comment', async (req: Request, res: Response) => {
 const port = parseInt(process.env.APP_PORT || '') || 3000;
 
 app.listen(port)
-
+ensureIndexes()
 module.exports = {app, ensureIndexes};

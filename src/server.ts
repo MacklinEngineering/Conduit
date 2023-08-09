@@ -1,4 +1,4 @@
-import {app, ensureIndexes} from './app.js';
+import {app, ensureIndexes} from './app';
 
 const startApiServer = async () => {
   await ensureIndexes().then(() => {
