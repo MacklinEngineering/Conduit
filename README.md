@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Conduit
 =======
 
@@ -13,4 +13,4 @@ npm run start
 
 `npm run fix`
 
->>>>>>> 7b510d2 (working swagger + couchbase connection)
+
