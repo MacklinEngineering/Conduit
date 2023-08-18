@@ -62,6 +62,7 @@ async function createCouchbaseCluster() {
 
     try {
       // cached.conn = await couchbase.connect('couchbases://' + CB_URL + '?tls_verify=none', {
+      console.log("tried first try for creating cluster")
       cached.conn = await couchbase.connect("couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com?tls_verify=none",{
       username: CB_USER,
       password: CB_PASS,
@@ -72,6 +73,7 @@ async function createCouchbaseCluster() {
   } else {
     // no TLS needed, use traditional connection string
     // cached.conn = await couchbase.connect('couchbase://' + CB_URL, {
+      console.log("in else block for creating cluster")
       cached.conn = await couchbase.connect('couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com', {
       username: CB_USER,
       password: CB_PASS,
@@ -87,22 +89,44 @@ export async function connectToDatabase() {
   console.log("This is the cluster, ", cluster)
   const bucket = cluster.bucket(CB_BUCKET);
   const collection = bucket.defaultCollection();
-  const usersCollection = bucket.collection('users');
-  const profileCollection = bucket.collection('profile');
-  const articleCollection = bucket.collection('article');
-  const commentCollection = bucket.collection('comment');
+  const usersCollection = bucket.scope('_default').collection('users');
+  const profilesCollection = bucket.scope('_default').collection('profiles');
+  const articlesCollection = bucket.scope('_default').collection('articles');
+  const tagsCollection = bucket.scope('_default').collection('tags');
 
   let dbConnection = {
     cluster,
     bucket,
     collection,
     usersCollection,
-    profileCollection,
-    articleCollection,
-    commentCollection
+    profilesCollection,
+    articlesCollection,
+    tagsCollection
   }
 
   return dbConnection;
+  // console.log("running main function")
+  // const clusterConnStr = 'couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com'
+  // const username = 'Admin1'
+  // const password = 'Password1!'
+  // const bucketName = 'Conduit1'
+
+  // const cluster = await couchbase.connect(clusterConnStr, {
+  //   username: username,
+  //   password: password,
+  //   // Sets a pre-configured profile called "wanDevelopment" to help avoid latency issues
+  //   // when accessing Capella from a different Wide Area Network
+  //   // or Availability Zone (e.g. your laptop).
+  //   configProfile: 'wanDevelopment',
+  // })
+
+  // console.log("Here is the Cluster: ", cluster)
+  // const bucket = cluster.bucket(bucketName)
+  // console.log("Here is the Bucket: ", bucket)
+  // // Get a reference to the default collection, required only for older Couchbase server versions
+  // // const defaultCollection = bucket.defaultCollection()
+
+  // const usersCollection = bucket.scope('_default').collection('users')
 }
 
 createCouchbaseCluster()

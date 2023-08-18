@@ -7,11 +7,58 @@ import YAML from 'yamljs';
 import * as couchbase from 'couchbase';
 import jwt from 'jsonwebtoken';
 import {connectToDatabase} from './db/connection';
+import genUniqueId from './utils/genUniqueId';
+import expressJwt from "express-jwt";
+import verifyJWT from './verifyJWT';
 import { userInfo } from 'os';
-
-const swaggerDocument = YAML.load('./swagger.yaml');
+// import {cache} from './cache'
+import users from "./routes/users";
+import articles from "./routes/articles";
+import profiles from "./routes/profiles";
+import tags from "./routes/tags";
 
 export const app = express();
+
+//use the file names in quoatations to handle each respective endpoint that starts with the file name
+app.use("/users", users)
+// app.use("/articles", articles)
+// app.use("/profiles", profiles)
+// app.use("/tags", tags)
+
+const CB_USER = process.env.CB_USER
+const CB_PASS = process.env.CB_PASS
+const CB_URL = process.env.CB_URL
+const CB_BUCKET = process.env.CB_BUCKET
+
+
+if (!CB_USER) {
+    throw new Error(
+        'Please define the CB_USER environment variable inside dev.env'
+    )
+  }
+  
+  if (!CB_PASS) {
+    throw new Error(
+        'Please define the CB_PASS environment variable inside dev.env'
+    )
+  }
+  
+  if (!CB_URL) {
+    throw new Error(
+        'Please define the CB_URL environment variable inside dev.env'
+    )
+  }
+  
+  if (!CB_BUCKET) {
+    throw new Error(
+        'Please define the CB_BUCKET environment variable inside dev.env'
+    )
+  }
+
+
+const swaggerDocument = YAML.load('./swagger.yaml');
+const SECRET = process.env.SECRET || "Mys3cr3tk3y"
+
 console.log("app is HUR")
 app.use(cors());
 app.use(express.json());
@@ -23,545 +70,240 @@ app.get('/', (req: Request, res: Response) => {
     '<body onload="window.location = \'/swagger-ui/\'"><a href="/swagger-ui/">Click here to see the API</a>'
   );
 });
-console.log("about to enter ensureIndexes")
-export const ensureIndexes = async () => {
+// console.log("about to enter ensureIndexes")
+// export const ensureIndexes = async () => {
 
-console.log("entered ensureIndexes")
-  const {cluster} = await connectToDatabase();
+// console.log("entered ensureIndexes")
+//   const {cluster} = await connectToDatabase();
 
-  const bucketIndex = `CREATE PRIMARY INDEX ON ${process.env.CB_BUCKET}`;
-  const usersCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.users;`;
-  const profileCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.profiles;`;
-  const articleCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.articles;`;
-  const commentCollectionIndex = `CREATE PRIMARY INDEX ON default:${process.env.CB_BUCKET}._default.tags;`;
+//   /**
+//  * Global is used here to maintain a cached connection across hot reloads
+//  * in development. This prevents connections growing exponentially
+//  * during API Route usage.
+//  */
+// console.log("hi")
+// let cached = cache.get('couchbase')
 
-  try {
-    await cluster.query(bucketIndex);
-    console.log('Bucket Index Creation: SUCCESS');
-  } catch (err) {
-    if (err instanceof couchbase.IndexExistsError) {
-      console.info('Bucket Index Creation: Index Already Exists');
-    } else {
-      console.error(err);
-    }
-  }
+// if (!cached) {
+//   cache.set('couchbase',  { conn: null })
+//   cached =cache.get('couchbase')
+// }
+// console.log("before createCouchbaseCluster")
+// console.log(IS_CAPELLA)
+// async function createCouchbaseCluster() {
+//   console.log("createCouchbaseCluster")
+//   if (cached.conn) {
+//     return cached.conn
+//   }
+//   console.log(IS_CAPELLA)
+//   if (IS_CAPELLA === 'true') {
+//     // Capella requires TLS connection string but we'll skip certificate verification with `tls_verify=none`
 
-  try {
-    await cluster.query(usersCollectionIndex);
-    console.log('Users Index Creation: SUCCESS');
-  } catch (err) {
-    if (err instanceof couchbase.IndexExistsError) {
-      console.info('Users Index Creation: Index Already Exists');
-    } else if (err instanceof couchbase.PlanningFailureError) {
-      console.info(
-        'Collection Index Creation: Users Collection Not Found. Ensure collection `users` exists.'
-      );
-    } else {
-      console.log(err);
-    }
-  }
-};
+//     try {
+//       // cached.conn = await couchbase.connect('couchbases://' + CB_URL + '?tls_verify=none', {
+//       console.log("tried first try for creating cluster")
+//       cached.conn = await couchbase.connect("couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com?tls_verify=none",{
+//       username: CB_USER,
+//       password: CB_PASS,
+//     })
+//     } catch (error) {
+//       console.log("ERROR HOE", error)
+//     }
+//   } else {
+//     // no TLS needed, use traditional connection string
+//     // cached.conn = await couchbase.connect('couchbase://' + CB_URL, {
+//       console.log("in else block for creating cluster")
+//       cached.conn = await couchbase.connect('couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com', {
+//       username: CB_USER,
+//       password: CB_PASS,
+//     })
+//   }
 
-app.post('/users', async (req: Request, res: Response) => {
-  console.log("Hitting users endpoint")
-  const {usersCollection} = await connectToDatabase();
-  console.log(usersCollection, "USERS COLLECTION")
+//   return cached.conn
+// }
 
-  const username = req.body.username;
-  const user = {name : username}
-  const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET)
-  res.json({accessToken: accessToken})
-
-  if (!req.body.email || !req.body.pass) {
-    return res.status(400).send({
-      message: `${!req.body.email ? 'email ' : ''}${
-        !req.body.email && !req.body.pass
-          ? 'and pass are required'
-          : req.body.email && !req.body.pass
-          ? 'pass is required'
-          : 'is required'
-      }`,
-    });
-  }
-
-  const id = v4();
-  const users = {
-    pid: id,
-    ...req.body,
-    pass: bcrypt.hashSync(req.body.pass, 10),
-  };
-  console.log(users, "USERS")
-
-  await usersCollection
-    .insert(id, users)
-    .then((result: any) => {
-      return res.send({...users, ...result});
+console.log("running main function")
+const clusterConnStr = 'couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com'
+const username = 'Admin1'
+const password = 'Password1!'
+const bucketName = 'Conduit1'
+export const main = async () => {
+// async function main() {
+    // console.log("running main function")
+    // const clusterConnStr = 'couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com'
+    // const username = 'Admin1'
+    // const password = 'Password1!'
+    // const bucketName = 'Conduit1'
+  
+    const cluster = await couchbase.connect(clusterConnStr, {
+      username: username,
+      password: password,
+      // Sets a pre-configured profile called "wanDevelopment" to help avoid latency issues
+      // when accessing Capella from a different Wide Area Network
+      // or Availability Zone (e.g. your laptop).
+      configProfile: 'wanDevelopment',
     })
-    .catch((e: {message: any}) => {
-      return res.status(500).send({
-        message: `User Insert Failed: ${e.message}`,
-      });
-    });
-
-    return res.send()
-    // // return res.status(500)
-    // return res.status(500).send({
-    //   message: `Something went wrong}`,
-    // });
-});
-
-function authenticateToken(req, res, next){
-  const authHeader = req.headers['authorization']
-  const token = authHeader && authHeader.split(' ')[1]
-  if (token == null) return res.sendStatus(401)
-
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user)=> {
-    if (err) return res.sendStatus(403)
-    req.user = user
-    next()
-  })
+  
+    
+    const bucket = cluster.bucket(bucketName)
+   
+    // Get a reference to the default collection, required only for older Couchbase server versions
+    // const defaultCollection = bucket.defaultCollection()
+  
+    // const usersCollection = bucket.scope('_default').collection('users')
+  
+    // const user = {
+    //   type: 'user',
+    //   name: 'Michael',
+    //   email: 'michael123@test.com',
+    //   interests: ['Swimming', 'Rowing'],
+    // }
+  
+    
+    // // Create and store a document
+    // await collection.upsert('michael123', user)
+  
+    // // Load the Document and print it
+    // // Prints Content and Metadata of the stored Document
+    // let getResult = await collection.get('michael123')
+    // console.log('Get Result: ', getResult)
+        
+            // // Perform a SQL++ (N1QL) Query
+            // const queryResult = await bucket
+            //   .scope('_default')
+            //   .query('SELECT name FROM `airline` WHERE country=$1 LIMIT 10', {
+            //     parameters: ['United States'],
+            //   })
+            // console.log('Query Results:')
+            // queryResult.rows.forEach((row) => {
+            //   console.log(row)
+            // })
 }
 
-app.post('/profile', async (req: Request, res: Response) => {
-  console.log("Hitting profile endpoint")
-  const {profileCollection} = await connectToDatabase();
-  console.log(profileCollection, "PROFILE COLLECTION")
-  if (!req.body.email || !req.body.pass) {
-    return res.status(400).send({
-      message: `${!req.body.email ? 'email ' : ''}${
-        !req.body.email && !req.body.pass
-          ? 'and pass are required'
-          : req.body.email && !req.body.pass
-          ? 'pass is required'
-          : 'is required'
-      }`,
-    });
-  }
+// Run the main function
+main()
+  .catch((err) => {
+    console.log('ERR:', err)
+    process.exit(1)
+  })
+//   .then(() => process.exit(0))
+//   /******************************************** ENDPOINT HIT */
+// const router = express.Router();
+// app.post("/users", async (req: Request, res: Response) => {
+// // router.route("/users").post(async (req: Request, res: Response) => {
+// // router.route("").post(async (req: Request, res: Response) => {
+//     // /users route 
+//     console.log("Hitting users endpoint")
+//     //   const {usersCollection} = await connectToDatabase();
+//     //   console.log(usersCollection, "USERS COLLECTION")
+  
+    
+//     //   const username = req.body.username;
+//     //   const email =req.body.email
+//     //   const password =req.body.pass
+//     // const user = {name : username}
+//     // already defined below - delete ^
+  
+//     const cluster = await couchbase.connect(clusterConnStr, {
+//       username: username,
+//       password: password,
+//       // Sets a pre-configured profile called "wanDevelopment" to help avoid latency issues
+//       // when accessing Capella from a different Wide Area Network
+//       // or Availability Zone (e.g. your laptop).
+//       configProfile: 'wanDevelopment',
+//     })
+  
+//     console.log("Here is the Cluster: ", cluster)
+//     const bucket = cluster.bucket(bucketName)
+//     console.log("Here is the Bucket: ", bucket)
+//     // Get a reference to the default collection, required only for older Couchbase server versions
+//     // const defaultCollection = bucket.defaultCollection()
+  
+//     const usersCollection = bucket.scope('_default').collection('users')
+  
+//     const users : Users = {
+//         username : req.body.username,
+//     email :req.body.email,
+//     password : bcrypt.hashSync(req.body.pass, 10)
+//         }
+//         console.log(users, "USERS")
+//         const requiredParams = [users.username, users.email, users.password]
+  
+//         for (let param of requiredParams){
+//         if (!req.body[param]){
+//             return res.status(400).send({
+//             message: `${param} is required`
+//             })
+//         }
+//         }
+  
+//         // Generate a unique id for the user and save to a variable
+//         const id: string = v4()
+//         // Create and store a document
+//         await usersCollection
+//         .upsert(id, users)
+//         .then((result: any) => {
+//             return res.send({...users, ...result});
+//         })
+//         .catch((e: {message: any}) => {
+//             return res.status(500).send({
+//             message: `User Insert Failed: ${e.message}`,
+//             });
+//         });
+//         // Load the Document and print it
+//         // Prints Content and Metadata of the stored Document
+//         let getResult = await usersCollection.get(id)
+//         console.log('Get Result: ', getResult)
+//         res.send("hi /users")
+//         return res.send()
 
-  const id = v4();
-  const profile = {
-    pid: id,
-    ...req.body,
-    pass: bcrypt.hashSync(req.body.pass, 10),
-  };
-  console.log(profile, "PROFILE")
-
-  await profileCollection
-    .insert(id, profile)
-    .then((result: any) => {
-      return res.send({...profile, ...result});
-    })
-    .catch((e: {message: any}) => {
-      return res.status(500).send({
-        message: `Profile Insert Failed: ${e.message}`,
-      });
-    });
-
-    return res.send()
-    // // return res.status(500)
-    // return res.status(500).send({
-    //   message: `Something went wrong}`,
-    // });
-});
-
-app.get('/profile/:pid', async (req: Request, res: Response) => {
-  const {profileCollection} = await connectToDatabase();
-  try {
-    await profileCollection
-      .get(req.params.pid)
-      .then((result: {value: any}) => res.send(result.value))
-      .catch((error: {message: any}) =>
-        res.status(500).send({
-          message: `KV Operation Failed: ${error.message}`,
-        })
-      );
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-app.put('/profile/:pid', async (req: Request, res: Response) => {
-  const {profileCollection} = await connectToDatabase();
-  try {
-    await profileCollection
-      .get(req.params.pid)
-      .then(
-        async (result: {
-          value: {
-            pid: any;
-            firstName: any;
-            lastName: any;
-            email: any;
-            pass: any;
-          };
-        }) => {
-          /* Create a New Document with new values,
-          if they are not passed from request, use existing values */
-          const newDoc = {
-            pid: result.value.pid,
-            firstName: req.body.firstName
-              ? req.body.firstName
-              : result.value.firstName,
-            lastName: req.body.lastName
-              ? req.body.lastName
-              : result.value.lastName,
-            email: req.body.email ? req.body.email : result.value.email,
-            pass: req.body.pass
-              ? bcrypt.hashSync(req.body.pass, 10)
-              : result.value.pass,
-          };
-          /* Persist updates with new doc */
-          await profileCollection
-            .upsert(req.params.pid, newDoc)
-            .then((result: any) => res.send({...newDoc, ...result}))
-            .catch((e: any) => res.status(500).send(e));
-        }
-      )
-      .catch((e: {message: any}) =>
-        res.status(500).send({
-          message: `Profile Not Found, cannot update: ${e.message}`,
-        })
-      );
-  } catch (e) {
-    console.error(e);
-  }
-});
-
-app.delete('/profile/:pid', async (req: Request, res: Response) => {
-  const {profileCollection} = await connectToDatabase();
-  try {
-    await profileCollection
-      .remove(req.params.pid)
-      .then((result: {value: any}) => res.send(result.value))
-      .catch((error: {message: any}) =>
-        res.status(500).send({
-          message: `Profile Not Found, cannot delete: ${error.message}`,
-        })
-      );
-  } catch (e) {
-    console.error(e);
-  }
-});
-
-app.get('/profiles', async (req: Request, res: Response) => {
-  const {cluster} = await connectToDatabase();
-  try {
-    const options = {
-      parameters: {
-        SKIP: Number(req.query.skip || 0),
-        LIMIT: Number(req.query.limit || 5),
-        SEARCH: `%${req.query.search?.toString().toLowerCase()}%`,
-      },
-    };
-    console.log("options ", options)
-    const query = `
-       SELECT p.*
-       FROM ${process.env.CB_BUCKET}._default.profile
-       WHERE lower(p.firstName) LIKE $SEARCH OR lower(p.lastName) LIKE $SEARCH`
-    // const query = `
-    //   SELECT p.*
-    //   FROM ${process.env.CB_BUCKET}._default.profile p
-    //   WHERE lower(p.firstName) LIKE $SEARCH OR lower(p.lastName) LIKE $SEARCH
-    //   LIMIT $LIMIT OFFSET $SKIP;
-    // `;
-    console.log("cluster.query ", cluster.query)
-    await cluster
-      .query(query, options)
-      .then((result: {rows: any}) => res.send(result.rows))
-      .catch((error: {message: any}) =>
-        res.status(500).send({
-          message: `Query failed: ${error.message}`,
-        })
-      );
-  } catch (e) {
-    console.error(e);
-  }
-});
-
-app.post('/profile/{pid}/article/{aid}', async (req: Request, res: Response) => {
-  const {articleCollection} = await connectToDatabase();
-  if (!req.body.email || !req.body.pass) {
-    return res.status(400).send({
-      message: `${!req.body.email ? 'email ' : ''}${
-        !req.body.email && !req.body.pass
-          ? 'and pass are required'
-          : req.body.email && !req.body.pass
-          ? 'pass is required'
-          : 'is required'
-      }`,
-    });
-  }
-
-  const id = v4();
-  const profile = {
-    pid: id,
-    ...req.body,
-    pass: bcrypt.hashSync(req.body.pass, 10),
-  };
-  await articleCollection
-    .insert(id, profile)
-    .then((result: any) => {return res.send({...profile, ...result})})
-    .catch((e: {message: any}) =>
-      {return res.status(500).send({
-        message: `Profile Insert Failed: ${e.message}`,
-      })}
-    );
-    return res.status(500).send({
-      message: `something went wrong`,
-    })
-});
-
-app.get('/profile/article/:aid', async (req: Request, res: Response) => {
-  const {articleCollection} = await connectToDatabase();
-  try {
-    await articleCollection
-      .get(req.params.pid)
-      .then((result: {value: any}) => res.send(result.value))
-      .catch((error: {message: any}) =>
-        res.status(500).send({
-          message: `KV Operation Failed: ${error.message}`,
-        })
-      );
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-app.put('/profile/article/:aid', async (req: Request, res: Response) => {
-  const {articleCollection} = await connectToDatabase();
-  try {
-    await articleCollection
-      .get(req.params.pid)
-      .then(
-        async (result: {
-          value: {
-            pid: any;
-            firstName: any;
-            lastName: any;
-            email: any;
-            pass: any;
-          };
-        }) => {
-          /* Create a New Document with new values,
-          if they are not passed from request, use existing values */
-          const newDoc = {
-            pid: result.value.pid,
-            firstName: req.body.firstName
-              ? req.body.firstName
-              : result.value.firstName,
-            lastName: req.body.lastName
-              ? req.body.lastName
-              : result.value.lastName,
-            email: req.body.email ? req.body.email : result.value.email,
-            pass: req.body.pass
-              ? bcrypt.hashSync(req.body.pass, 10)
-              : result.value.pass,
-          };
-          /* Persist updates with new doc */
-          await articleCollection
-            .upsert(req.params.pid, newDoc)
-            .then((result: any) => res.send({...newDoc, ...result}))
-            .catch((e: any) => res.status(500).send(e));
-        }
-      )
-      .catch((e: {message: any}) =>
-        res.status(500).send({
-          message: `Profile Not Found, cannot update: ${e.message}`,
-        })
-      );
-  } catch (e) {
-    console.error(e);
-  }
-});
-
-app.delete('/profile/article/:aid', async (req: Request, res: Response) => {
-  const {articleCollection} = await connectToDatabase();
-  try {
-    await articleCollection
-      .remove(req.params.pid)
-      .then((result: {value: any}) => res.send(result.value))
-      .catch((error: {message: any}) =>
-        res.status(500).send({
-          message: `Profile Not Found, cannot delete: ${error.message}`,
-        })
-      );
-  } catch (e) {
-    console.error(e);
-  }
-});
-
-app.get('/profile/articles', async (req: Request, res: Response) => {
-  const {cluster} = await connectToDatabase();
-  try {
-    const options = {
-      parameters: {
-        SKIP: Number(req.query.skip || 0),
-        LIMIT: Number(req.query.limit || 5),
-        SEARCH: `%${req.query.search?.toString().toLowerCase()}%`,
-      },
-    };
-    const query = `
-      SELECT p.*
-      FROM ${process.env.CB_BUCKET}._default.profile.comments p
-      WHERE lower(p.firstName) LIKE $SEARCH OR lower(p.lastName) LIKE $SEARCH
-      LIMIT $LIMIT OFFSET $SKIP;
-    `;
-    await cluster
-      .query(query, options)
-      .then((result: {rows: any}) => res.send(result.rows))
-      .catch((error: {message: any}) =>
-        res.status(500).send({
-          message: `Query failed: ${error.message}`,
-        })
-      );
-  } catch (e) {
-    console.error(e);
-  }
-});
-
-app.post('/profile/article/comment', async (req: Request, res: Response) => {
-  const {commentCollection} = await connectToDatabase();
-  if (!req.body.email || !req.body.pass) {
-    return res.status(400).send({
-      message: `${!req.body.email ? 'email ' : ''}${
-        !req.body.email && !req.body.pass
-          ? 'and pass are required'
-          : req.body.email && !req.body.pass
-          ? 'pass is required'
-          : 'is required'
-      }`,
-    });
-  }
-
-  const id = v4();
-  const profile = {
-    pid: id,
-    ...req.body,
-    pass: bcrypt.hashSync(req.body.pass, 10),
-  };
-  await commentCollection
-    .insert(id, profile)
-    .then((result: any) => {return res.send({...profile, ...result})})
-    .catch((e: {message: any}) =>
-      {return res.status(500).send({
-        message: `Profile Insert Failed: ${e.message}`,
-      })}
-    );
-    return res.status(500).send({
-      message: `Something went wrong`,
-    })
-});
-
-app.get('/profile/article/:aid', async (req: Request, res: Response) => {
-  const {commentCollection} = await connectToDatabase();
-  try {
-    await commentCollection
-      .get(req.params.pid)
-      .then((result: {value: any}) => res.send(result.value))
-      .catch((error: {message: any}) =>
-        res.status(500).send({
-          message: `KV Operation Failed: ${error.message}`,
-        })
-      );
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-app.put('/profile/article/:aid', async (req: Request, res: Response) => {
-  const {commentCollection} = await connectToDatabase();
-  try {
-    await commentCollection
-      .get(req.params.pid)
-      .then(
-        async (result: {
-          value: {
-            pid: any;
-            firstName: any;
-            lastName: any;
-            email: any;
-            pass: any;
-          };
-        }) => {
-          /* Create a New Document with new values,
-          if they are not passed from request, use existing values */
-          const newDoc = {
-            pid: result.value.pid,
-            firstName: req.body.firstName
-              ? req.body.firstName
-              : result.value.firstName,
-            lastName: req.body.lastName
-              ? req.body.lastName
-              : result.value.lastName,
-            email: req.body.email ? req.body.email : result.value.email,
-            pass: req.body.pass
-              ? bcrypt.hashSync(req.body.pass, 10)
-              : result.value.pass,
-          };
-          /* Persist updates with new doc */
-          await commentCollection
-            .upsert(req.params.pid, newDoc)
-            .then((result: any) => res.send({...newDoc, ...result}))
-            .catch((e: any) => res.status(500).send(e));
-        }
-      )
-      .catch((e: {message: any}) =>
-        res.status(500).send({
-          message: `Profile Not Found, cannot update: ${e.message}`,
-        })
-      );
-  } catch (e) {
-    console.error(e);
-  }
-});
-
-app.delete('/profile/article/:aid', async (req: Request, res: Response) => {
-  const {commentCollection} = await connectToDatabase();
-  try {
-    await commentCollection
-      .remove(req.params.pid)
-      .then((result: {value: any}) => res.send(result.value))
-      .catch((error: {message: any}) =>
-        res.status(500).send({
-          message: `Profile Not Found, cannot delete: ${error.message}`,
-        })
-      );
-  } catch (e) {
-    console.error(e);
-  }
-});
-
-app.get('/profile/article/comment', async (req: Request, res: Response) => {
-  const {cluster} = await connectToDatabase();
-  try {
-    const options = {
-      parameters: {
-        SKIP: Number(req.query.skip || 0),
-        LIMIT: Number(req.query.limit || 5),
-        SEARCH: `%${req.query.search?.toString().toLowerCase()}%`,
-      },
-    };
-    const query = `
-      SELECT p.*
-      FROM ${process.env.CB_BUCKET}._default.profile.comments p
-      WHERE lower(p.firstName) LIKE $SEARCH OR lower(p.lastName) LIKE $SEARCH
-      LIMIT $LIMIT OFFSET $SKIP;
-    `;
-    await cluster
-      .query(query, options)
-      .then((result: {rows: any}) => res.send(result.rows))
-      .catch((error: {message: any}) =>
-        res.status(500).send({
-          message: `Query failed: ${error.message}`,
-        })
-      );
-  } catch (e) {
-    console.error(e);
-  }
-});
-
-const port = parseInt(process.env.APP_PORT || '') || 3000;
+  
+//                 //   const accessToken = jwt.sign(user, SECRET)
+//                 //   res.json({accessToken: accessToken})
+  
+//                 //  // Load the Document and print it
+//                 //     // Prints Content and Metadata of the stored Document
+//                 //     let getResult = await usersCollection.get(id)
+//                 //     console.log('Get Result: ', getResult)
+  
+//                 // //   const id = v4();
+//                 //   const users = {
+//                 //     pid: id,
+//                 //     ...req.body,
+//                 //     pass: bcrypt.hashSync(password, 10),
+//                 //   };
+//                 //   console.log(users, "USERS")
+  
+//                 //   await usersCollection
+//                 //     .insert(id, users)
+//                 //     .then((result: any) => {
+//                 //       return res.send({...users, ...result});
+//                 //     })
+//                 //     .catch((e: {message: any}) => {
+//                 //       return res.status(500).send({
+//                 //         message: `User Insert Failed: ${e.message}`,
+//                 //       });
+//                 //     });
+  
+//                 //     return res.send()
+//                     // // return res.status(500)
+//                     // return res.status(500).send({
+//                     //   message: `Something went wrong}`,
+//                     // });
+//     });
+//       /********************** ENDPOINT HIT FINISHED */
+const port = parseInt(process.env.APP_PORT || '') || 3002;
 
 app.listen(port)
-ensureIndexes()
-module.exports = {app, ensureIndexes};
+// ensureIndexes()
+// module.exports = {app, ensureIndexes};
+module.exports = {app};
+
+
+//   // Run the main function
+//   main()
+//     .catch((err) => {
+//       console.log('ERR:', err)
+//       process.exit(1)
+//     })
+//     .then(process.exit)
