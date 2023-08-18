@@ -2,6 +2,7 @@ import express, {Request, Response} from 'express';
 import bcrypt from 'bcryptjs';
 import {v4} from 'uuid';
 import cors from 'cors';
+import corsOptions from '../config/corsOptions';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import * as couchbase from 'couchbase';
@@ -11,26 +12,24 @@ import genUniqueId from './utils/genUniqueId';
 import expressJwt from "express-jwt";
 import verifyJWT from './verifyJWT';
 import { userInfo } from 'os';
+import bodyParser from 'body-parser';
 // import {cache} from './cache'
 import users from "./routes/users";
 import articles from "./routes/articles";
 import profiles from "./routes/profiles";
 import tags from "./routes/tags";
-
+// import {token} from "../src/routes/users"
 export const app = express();
-
+app.use(cors(corsOptions));
 //use the file names in quoatations to handle each respective endpoint that starts with the file name
 app.use("/users", users)
 // app.use("/articles", articles)
 // app.use("/profiles", profiles)
 // app.use("/tags", tags)
-
 const CB_USER = process.env.CB_USER
 const CB_PASS = process.env.CB_PASS
 const CB_URL = process.env.CB_URL
 const CB_BUCKET = process.env.CB_BUCKET
-
-
 if (!CB_USER) {
     throw new Error(
         'Please define the CB_USER environment variable inside dev.env'
@@ -54,28 +53,98 @@ if (!CB_USER) {
         'Please define the CB_BUCKET environment variable inside dev.env'
     )
   }
-
-
 const swaggerDocument = YAML.load('./swagger.yaml');
 const SECRET = process.env.SECRET || "Mys3cr3tk3y"
-
 console.log("app is HUR")
-app.use(cors());
+// app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
-
 app.use('/swagger-ui', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.get('/', (req: Request, res: Response) => {
   res.send(
     '<body onload="window.location = \'/swagger-ui/\'"><a href="/swagger-ui/">Click here to see the API</a>'
   );
 });
+                //token,
+app.get("/user", verifyJWT, bodyParser.json(), async (req: Request, res: Response) => {
+    console.log("YOO INSIDE GET")
+    // const headers = { headers: { 'Authorization': 'Token ' + token } };
+    //    const accessToken = jwt.sign(user, SECRET)
+    //     res.json({accessToken: accessToken})
+const cluster = await couchbase.connect(clusterConnStr, {
+  username: username,
+  password: password,
+  // Sets a pre-configured profile called "wanDevelopment" to help avoid latency issues
+  // when accessing Capella from a different Wide Area Network
+  // or Availability Zone (e.g. your laptop).
+  configProfile: 'wanDevelopment',
+})
+// console.log("Here is the Cluster: ", cluster)
+const bucket = cluster.bucket(bucketName)
+// console.log("Here is the Bucket: ", bucket)
+const usersCollection = bucket.scope('_default').collection('users')
+console.log("here is the request body: ", req.body)
+// const userPassword = bcrypt.hashSync( req.body.user.password, 10)
+// console.log("here is the hashed password, ", userPassword)
+// const users : Users = {
+//     username : req.body.user.username,
+//     email :req.body.user.email,
+//     password : userPassword
+//     }
+    const email = req.body.user.email
+    console.log(email, "User email")
+    // const user = await usersCollection.find()
+    // Load the Document and print it
+    // Prints Content and Metadata of the stored Document
+    let user = await usersCollection.get(email)
+    console.log('Get User: ', user)
+    if (!user) {
+      return res.status(404).json({message: "User Not Found"});
+  }
+    return res.send()
+    // res.send("hi /users")
+    //TODO: Handle required params vs NOT
+    // const requiredParams = [req.body.user.username, req.body.user.email, req.body.user.password]
+    // for (let param of requiredParams){
+    // if (!req.body[param]){
+    //     return res.status(400).send({
+    //     message: `${param} is required`
+    //     })
+    // }
+    //}
+    // // Generate a unique id for the user and save to a variable
+    // const id: string = v4()
+    // //TODO: Check if the email is already in use
+    // //Then, fail this and notify the user
+    // // Create and store a document
+    // await usersCollection
+    // .upsert(id, users)
+    // .then((result: any) => {
+    //     return res.send({...users, ...result});
+    // })
+    // .catch((e: {message: any}) => {
+    //     return res.status(500).send({
+    //     message: `Get User Failed: ${e.message}`,
+    //     });
+    // });
+    // // Load the Document and print it
+    // // Prints Content and Metadata of the stored Document
+    // let getResult = await usersCollection.get(id)
+    // console.log('Get Result: ', getResult)
+    // res.send("hi /users")
+    // return res.send()
+            //   const accessToken = jwt.sign(user, SECRET)
+            //   res.json({accessToken: accessToken})
+                // // return res.status(500)
+                // return res.status(500).send({
+                //   message: `Something went wrong}`,
+                // });
+});
+app.put('/user', verifyJWT )
 // console.log("about to enter ensureIndexes")
 // export const ensureIndexes = async () => {
-
 // console.log("entered ensureIndexes")
 //   const {cluster} = await connectToDatabase();
-
 //   /**
 //  * Global is used here to maintain a cached connection across hot reloads
 //  * in development. This prevents connections growing exponentially
@@ -83,7 +152,6 @@ app.get('/', (req: Request, res: Response) => {
 //  */
 // console.log("hi")
 // let cached = cache.get('couchbase')
-
 // if (!cached) {
 //   cache.set('couchbase',  { conn: null })
 //   cached =cache.get('couchbase')
@@ -98,7 +166,6 @@ app.get('/', (req: Request, res: Response) => {
 //   console.log(IS_CAPELLA)
 //   if (IS_CAPELLA === 'true') {
 //     // Capella requires TLS connection string but we'll skip certificate verification with `tls_verify=none`
-
 //     try {
 //       // cached.conn = await couchbase.connect('couchbases://' + CB_URL + '?tls_verify=none', {
 //       console.log("tried first try for creating cluster")
@@ -118,10 +185,8 @@ app.get('/', (req: Request, res: Response) => {
 //       password: CB_PASS,
 //     })
 //   }
-
 //   return cached.conn
 // }
-
 console.log("running main function")
 const clusterConnStr = 'couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com'
 const username = 'Admin1'
@@ -179,7 +244,6 @@ export const main = async () => {
             //   console.log(row)
             // })
 }
-
 // Run the main function
 main()
   .catch((err) => {
@@ -256,7 +320,6 @@ main()
 //         console.log('Get Result: ', getResult)
 //         res.send("hi /users")
 //         return res.send()
-
   
 //                 //   const accessToken = jwt.sign(user, SECRET)
 //                 //   res.json({accessToken: accessToken})
@@ -292,14 +355,24 @@ main()
 //                     // });
 //     });
 //       /********************** ENDPOINT HIT FINISHED */
+// export const generateAccessToken = function() {
+//     const accessToken = jwt.sign({
+//             "user": {
+//                 "id": req.body.users.id,
+//                 "email": req.body.users.email,
+//                 "password": req.body.users.password
+//             }
+//         },
+//         SECRET,
+//         { expiresIn: "1d"}
+//     );
+//     return accessToken;
+// }
 const port = parseInt(process.env.APP_PORT || '') || 3002;
-
 app.listen(port)
 // ensureIndexes()
 // module.exports = {app, ensureIndexes};
 module.exports = {app};
-
-
 //   // Run the main function
 //   main()
 //     .catch((err) => {
