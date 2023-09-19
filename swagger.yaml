@@ -48,8 +48,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/GenericError'
-      # security:
-      #   - Token: ffe4e18c167b1c5ca6094e19d186e34b504d21ec5c11564e37b7ee2ec04a8072814a9631e6521fe146fce117bca7309e961132fb0c370d82b80b9bd968674737
+      security:
+        - Token: []
     put:
       tags:
         - User and Authentication
@@ -65,8 +65,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/GenericError'
-      # security:
-      #   - Token: ffe4e18c167b1c5ca6094e19d186e34b504d21ec5c11564e37b7ee2ec04a8072814a9631e6521fe146fce117bca7309e961132fb0c370d82b80b9bd968674737
+      security:
+        - Token: []
       x-codegen-request-body-name: body
   /users/login:
     post:
@@ -127,8 +127,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/GenericError'
-      # security:
-      #   - Token: ffe4e18c167b1c5ca6094e19d186e34b504d21ec5c11564e37b7ee2ec04a8072814a9631e6521fe146fce117bca7309e961132fb0c370d82b80b9bd968674737
+      security:
+        - Token: []
     delete:
       tags:
         - Profile
@@ -149,8 +149,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/GenericError'
-      # security:
-      #   - Token: ffe4e18c167b1c5ca6094e19d186e34b504d21ec5c11564e37b7ee2ec04a8072814a9631e6521fe146fce117bca7309e961132fb0c370d82b80b9bd968674737
+      security:
+        - Token: []
   /articles/feed:
     get:
       tags:
@@ -169,8 +169,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/GenericError'
-      # security:
-      #   - Token: ffe4e18c167b1c5ca6094e19d186e34b504d21ec5c11564e37b7ee2ec04a8072814a9631e6521fe146fce117bca7309e961132fb0c370d82b80b9bd968674737
+      security:
+        - Token: []
   /articles:
     get:
       tags:
@@ -219,8 +219,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/GenericError'
-      # security:
-      #   - Token: ffe4e18c167b1c5ca6094e19d186e34b504d21ec5c11564e37b7ee2ec04a8072814a9631e6521fe146fce117bca7309e961132fb0c370d82b80b9bd968674737
+      security:
+        - Token: []
       x-codegen-request-body-name: article
   /articles/{slug}:
     get:
@@ -263,8 +263,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/GenericError'
-      # security:
-      #   - Token: ffe4e18c167b1c5ca6094e19d186e34b504d21ec5c11564e37b7ee2ec04a8072814a9631e6521fe146fce117bca7309e961132fb0c370d82b80b9bd968674737
+      security:
+        - Token: []
       x-codegen-request-body-name: article
     delete:
       tags:
@@ -286,8 +286,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/GenericError'
-      # security:
-      #   - Token: ffe4e18c167b1c5ca6094e19d186e34b504d21ec5c11564e37b7ee2ec04a8072814a9631e6521fe146fce117bca7309e961132fb0c370d82b80b9bd968674737
+      security:
+        - Token: []
   /articles/{slug}/comments:
     get:
       tags:
@@ -331,8 +331,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/GenericError'
-      # security:
-      #   - Token: ffe4e18c167b1c5ca6094e19d186e34b504d21ec5c11564e37b7ee2ec04a8072814a9631e6521fe146fce117bca7309e961132fb0c370d82b80b9bd968674737
+      security:
+        - Token: []
       x-codegen-request-body-name: comment
   /articles/{slug}/comments/{id}:
     delete:
@@ -361,8 +361,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/GenericError'
-      # security:
-      #   - Token: ffe4e18c167b1c5ca6094e19d186e34b504d21ec5c11564e37b7ee2ec04a8072814a9631e6521fe146fce117bca7309e961132fb0c370d82b80b9bd968674737
+      security:
+        - Token: []
   /articles/{slug}/favorite:
     post:
       tags:
@@ -384,8 +384,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/GenericError'
-      # security:
-      #   - Token: ffe4e18c167b1c5ca6094e19d186e34b504d21ec5c11564e37b7ee2ec04a8072814a9631e6521fe146fce117bca7309e961132fb0c370d82b80b9bd968674737
+      security:
+        - Token: []
     delete:
       tags:
         - Favorites
@@ -406,8 +406,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/GenericError'
-      # security:
-      #   - Token: ffe4e18c167b1c5ca6094e19d186e34b504d21ec5c11564e37b7ee2ec04a8072814a9631e6521fe146fce117bca7309e961132fb0c370d82b80b9bd968674737
+      security:
+        - Token: []
   /tags:
     get:
       tags:
@@ -791,14 +791,14 @@ components:
         minimum: 1
         default: 20
       description: The numbers of items to return.
-  # securitySchemes:
-  #   Token:
-  #     type: apiKey
-  #     description: "For accessing the protected API resources, you must have received\
-  #       \ a a valid JWT token after registering or logging in. This JWT token must\
-  #       \ then be used for all protected resources by passing it in via the 'Authorization'\
-  #       \ header.\n\nA JWT token is generated by the API by either registering via\
-  #       \ /users or logging in via /users/login.\n\nThe following format must be in\
-  #       \ the 'Authorization' header :\n\n    Token xxxxxx.yyyyyyy.zzzzzz\n    \n"
-  #     name: Authorization
-  #     in: header
+  securitySchemes:
+    Token:
+      type: apiKey
+      description: "For accessing the protected API resources, you must have received >
+          a valid JWT token after registering or logging in. This JWT token must
+         then be used for all protected resources by passing it in via the 'Authorization'
+         header. A JWT token is generated by the API by either registering via
+         /users or logging in via /users/login.The following format must be in
+         the 'Authorization' header :    Token xxxxxx.yyyyyyy.zzzzzz"
+      name: Authorization
+      in: header

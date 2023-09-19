@@ -82,7 +82,7 @@ async function createCouchbaseCluster() {
 
   return cached.conn
 }
-
+//
 export async function connectToDatabase() {
   console.log("I got into createCouchbaseCluster")
   const cluster = await createCouchbaseCluster()

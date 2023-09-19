@@ -18,14 +18,21 @@ import users from "./routes/users";
 import articles from "./routes/articles";
 import profiles from "./routes/profiles";
 import tags from "./routes/tags";
+import comments from "./routes/comments";
+import favorites from "./routes/favorites";
+import { connectCapella}  from './db/connect_to_capella';
+import { request } from 'http';
 // import {token} from "../src/routes/users"
 export const app = express();
 app.use(cors(corsOptions));
+// app.use(["/users", "/articles", "/articles/:slug/comments", "/articles/:slug/favorite", "profiles/:username", "tags"])
 //use the file names in quoatations to handle each respective endpoint that starts with the file name
 app.use("/users", users)
-// app.use("/articles", articles)
-// app.use("/profiles", profiles)
-// app.use("/tags", tags)
+app.use("/articles", articles)
+app.use("/profiles/:username", profiles)
+app.use("/tags", tags)
+app.use("/articles/:slug/comments", comments)
+app.use("/articles/:slug/favorite", favorites)
 const CB_USER = process.env.CB_USER
 const CB_PASS = process.env.CB_PASS
 const CB_URL = process.env.CB_URL
@@ -65,184 +72,192 @@ app.get('/', (req: Request, res: Response) => {
     '<body onload="window.location = \'/swagger-ui/\'"><a href="/swagger-ui/">Click here to see the API</a>'
   );
 });
-                //token,
-app.get("/user", verifyJWT, bodyParser.json(), async (req: Request, res: Response) => {
-    console.log("YOO INSIDE GET")
-    // const headers = { headers: { 'Authorization': 'Token ' + token } };
-    //    const accessToken = jwt.sign(user, SECRET)
-    //     res.json({accessToken: accessToken})
-const cluster = await couchbase.connect(clusterConnStr, {
-  username: username,
-  password: password,
-  // Sets a pre-configured profile called "wanDevelopment" to help avoid latency issues
-  // when accessing Capella from a different Wide Area Network
-  // or Availability Zone (e.g. your laptop).
-  configProfile: 'wanDevelopment',
-})
-// console.log("Here is the Cluster: ", cluster)
-const bucket = cluster.bucket(bucketName)
-// console.log("Here is the Bucket: ", bucket)
-const usersCollection = bucket.scope('_default').collection('users')
-console.log("here is the request body: ", req.body)
-// const userPassword = bcrypt.hashSync( req.body.user.password, 10)
-// console.log("here is the hashed password, ", userPassword)
-// const users : Users = {
-//     username : req.body.user.username,
-//     email :req.body.user.email,
-//     password : userPassword
-//     }
-    const email = req.body.user.email
-    console.log(email, "User email")
-    // const user = await usersCollection.find()
-    // Load the Document and print it
-    // Prints Content and Metadata of the stored Document
-    let user = await usersCollection.get(email)
-    console.log('Get User: ', user)
-    if (!user) {
-      return res.status(404).json({message: "User Not Found"});
-  }
-    return res.send()
-    // res.send("hi /users")
-    //TODO: Handle required params vs NOT
-    // const requiredParams = [req.body.user.username, req.body.user.email, req.body.user.password]
-    // for (let param of requiredParams){
-    // if (!req.body[param]){
-    //     return res.status(400).send({
-    //     message: `${param} is required`
-    //     })
-    // }
-    //}
-    // // Generate a unique id for the user and save to a variable
+interface Users {
+    username : string ;
+    email : string;
+    password :string;
+    bio: string;
+    image: string;
+    token: string;
+    id: string;
+ } 
+
+ let token: any
+ export const clusterConnStr = 'couchbases://cb.yfxtafw9ud1ccllx.cloud.couchbase.com'
+export const capellaUsername = 'Admin1'
+export const capellaPassword = 'Password1!'
+export const bucketName = 'ConduitDemo'
+//token,
+
+// console.log(token)
+
+app.get("/user", verifyJWT, async ( req: Request, res: Response) => {
+  // app.get("/user", verifyJWT, bodyParser.json(), async ( req: Request, res: Response) => {
+//How do I return the user?
+    console.log("YOO INSIDE GET", req.headers)
+    const token = req.header("authorization")?.replace("Token ","")
+    console.log(token)
     // const id: string = v4()
-    // //TODO: Check if the email is already in use
-    // //Then, fail this and notify the user
-    // // Create and store a document
-    // await usersCollection
-    // .upsert(id, users)
-    // .then((result: any) => {
-    //     return res.send({...users, ...result});
-    // })
-    // .catch((e: {message: any}) => {
-    //     return res.status(500).send({
-    //     message: `Get User Failed: ${e.message}`,
-    //     });
-    // });
-    // // Load the Document and print it
-    // // Prints Content and Metadata of the stored Document
-    // let getResult = await usersCollection.get(id)
-    // console.log('Get Result: ', getResult)
-    // res.send("hi /users")
-    // return res.send()
-            //   const accessToken = jwt.sign(user, SECRET)
-            //   res.json({accessToken: accessToken})
-                // // return res.status(500)
-                // return res.status(500).send({
-                //   message: `Something went wrong}`,
-                // });
-});
-app.put('/user', verifyJWT )
-// console.log("about to enter ensureIndexes")
-// export const ensureIndexes = async () => {
-// console.log("entered ensureIndexes")
-//   const {cluster} = await connectToDatabase();
-//   /**
-//  * Global is used here to maintain a cached connection across hot reloads
-//  * in development. This prevents connections growing exponentially
-//  * during API Route usage.
-//  */
-// console.log("hi")
-// let cached = cache.get('couchbase')
-// if (!cached) {
-//   cache.set('couchbase',  { conn: null })
-//   cached =cache.get('couchbase')
-// }
-// console.log("before createCouchbaseCluster")
-// console.log(IS_CAPELLA)
-// async function createCouchbaseCluster() {
-//   console.log("createCouchbaseCluster")
-//   if (cached.conn) {
-//     return cached.conn
-//   }
-//   console.log(IS_CAPELLA)
-//   if (IS_CAPELLA === 'true') {
-//     // Capella requires TLS connection string but we'll skip certificate verification with `tls_verify=none`
-//     try {
-//       // cached.conn = await couchbase.connect('couchbases://' + CB_URL + '?tls_verify=none', {
-//       console.log("tried first try for creating cluster")
-//       cached.conn = await couchbase.connect("couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com?tls_verify=none",{
-//       username: CB_USER,
-//       password: CB_PASS,
-//     })
-//     } catch (error) {
-//       console.log("ERROR HOE", error)
-//     }
-//   } else {
-//     // no TLS needed, use traditional connection string
-//     // cached.conn = await couchbase.connect('couchbase://' + CB_URL, {
-//       console.log("in else block for creating cluster")
-//       cached.conn = await couchbase.connect('couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com', {
-//       username: CB_USER,
-//       password: CB_PASS,
-//     })
-//   }
-//   return cached.conn
-// }
-console.log("running main function")
-const clusterConnStr = 'couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com'
-const username = 'Admin1'
-const password = 'Password1!'
-const bucketName = 'Conduit1'
-export const main = async () => {
-// async function main() {
-    // console.log("running main function")
-    // const clusterConnStr = 'couchbases://cb.kduxtf3jgtvundi.cloud.couchbase.com'
-    // const username = 'Admin1'
-    // const password = 'Password1!'
-    // const bucketName = 'Conduit1'
+        // res.append(id)
+        //TODO: Check if the email is already in use
+        //Then, fail this and notify the user
+        const cluster = await couchbase.connect(clusterConnStr, {
+          username: capellaUsername,
+          password: capellaPassword,
+          // Sets a pre-configured profile called "wanDevelopment" to help avoid latency issues
+          // when accessing Capella from a different Wide Area Network
+          // or Availability Zone (e.g. your laptop).
+          configProfile: 'wanDevelopment',
+        })
+      
+        // console.log("Here is the Cluster: ", cluster)
+        const bucket = cluster.bucket(bucketName)
+        // console.log("Here is the Bucket: ", bucket)
+        // Get a reference to the default collection, required only for older Couchbase server versions
+        // const defaultCollection = bucket.defaultCollection()
+      
+        const usersCollection = bucket.scope('blog').collection('users')
+        const profilesCollection = bucket.scope('blog').collection('profiles')
+        const articlesCollection = bucket.scope('blog').collection('articles')
+        const commentsCollection = bucket.scope('blog').collection('comments')
+        const favoritesCollection = bucket.scope('blog').collection('favorites')
+        const tagsCollection = bucket.scope('blog').collection('tags')
   
-    const cluster = await couchbase.connect(clusterConnStr, {
-      username: username,
-      password: password,
-      // Sets a pre-configured profile called "wanDevelopment" to help avoid latency issues
-      // when accessing Capella from a different Wide Area Network
-      // or Availability Zone (e.g. your laptop).
-      configProfile: 'wanDevelopment',
+        let couchbaseConnection = {
+          cluster,
+          bucket,
+          // collection,
+          usersCollection,
+          profilesCollection,
+          articlesCollection,
+          commentsCollection,
+          favoritesCollection,
+          tagsCollection
+        }
+
+        const queryResult = await bucket
+            .scope('blog')                                //turn into template literal
+            .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {
+            })
+
+    queryResult.rows.forEach((row) => {
+    console.log("ROWS IN THE WORKING /user QUERY", row)
     })
-  
+
+    console.log("QUERY RESULT :", queryResult)
+    const userId = queryResult["rows"][0].users.id
+    let getResult = {"user" : await usersCollection.get(userId)} //wrong but just a placeholder
+    console.log('Get Result: ', getResult )
+
+    const myUserObject = getResult.user.content
+    console.log(myUserObject, "MY USER OBJECT")
+
     
-    const bucket = cluster.bucket(bucketName)
-   
-    // Get a reference to the default collection, required only for older Couchbase server versions
-    // const defaultCollection = bucket.defaultCollection()
+            return res.status(201).json({user : myUserObject})
+
+});
+app.put("/user", verifyJWT, async ( req: Request, res: Response) => {
+
+  // Query the database to grab the user object
+  //Take whatever the user inputs into each field and replace that with the new req.body.blah
+  //If the user doesn't update something, keep the previous value
+
+
+
+
+  // app.get("/user", verifyJWT, bodyParser.json(), async ( req: Request, res: Response) => {
+//How do I return the user?
+    console.log("YOO INSIDE PUT", req.headers)
+    const token = req.header("authorization")?.replace("Token ","")
+    console.log(token)
+    // const id: string = v4()
+        // res.append(id)
+        //TODO: Check if the email is already in use
+        //Then, fail this and notify the user
+        const cluster = await couchbase.connect(clusterConnStr, {
+          username: capellaUsername,
+          password: capellaPassword,
+          // Sets a pre-configured profile called "wanDevelopment" to help avoid latency issues
+          // when accessing Capella from a different Wide Area Network
+          // or Availability Zone (e.g. your laptop).
+          configProfile: 'wanDevelopment',
+        })
+      
+        // console.log("Here is the Cluster: ", cluster)
+        const bucket = cluster.bucket(bucketName)
+        // console.log("Here is the Bucket: ", bucket)
+        // Get a reference to the default collection, required only for older Couchbase server versions
+        // const defaultCollection = bucket.defaultCollection()
+      
+        const usersCollection = bucket.scope('blog').collection('users')
+        const profilesCollection = bucket.scope('blog').collection('profiles')
+        const articlesCollection = bucket.scope('blog').collection('articles')
+        const commentsCollection = bucket.scope('blog').collection('comments')
+        const favoritesCollection = bucket.scope('blog').collection('favorites')
+        const tagsCollection = bucket.scope('blog').collection('tags')
   
-    // const usersCollection = bucket.scope('_default').collection('users')
-  
-    // const user = {
-    //   type: 'user',
-    //   name: 'Michael',
-    //   email: 'michael123@test.com',
-    //   interests: ['Swimming', 'Rowing'],
-    // }
-  
+        let couchbaseConnection = {
+          cluster,
+          bucket,
+          // collection,
+          usersCollection,
+          profilesCollection,
+          articlesCollection,
+          commentsCollection,
+          favoritesCollection,
+          tagsCollection
+        }
+
+        const userQuery = await bucket
+            .scope('blog')                                //turn into template literal
+            .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {
+            })
+
+            userQuery.rows.forEach((row) => {
+    console.log("ROWS IN THE WORKING put /user QUERY", row)
+    })
+
+    console.log("QUERY RESULT :", userQuery)
+    let databaseUser = userQuery.rows[0].users
+    let inputData = req.body.user
+
+    //Loop through the User request body and update the document object for each key inputted
+    Object.keys(inputData).forEach(key => {
+      databaseUser[key] = inputData[key]
+    });
+
+  const getResult = await usersCollection
+  .replace(databaseUser.id, databaseUser)  //rewrites the entire document, have to learn how "mutateIn" method works for optimization
+  .then((result: any) => {
+      console.log("The Replace Works")
+  })
+  .catch((e: {message: any}) => {
+      return res.status(500).send({
+      message: `User Insert Failed: ${e.message}`,
+      });
+  });
+
+  // Load the Document and print it
+  // Prints Content and Metadata of the stored Document
+
+
+  //TODO: Requires refactor to programmatically add to user nested object 
+
+  let updateUserResult = {"user" : await usersCollection.get(databaseUser.id)}
+
+  console.log('Update User Result: ', updateUserResult )
+
+  const myUserObject = updateUserResult.user.content
+  console.log(myUserObject, "MY USER OBJECT AFTER REPLACE METHOD WITH TOKEN AND ID")
     
-    // // Create and store a document
-    // await collection.upsert('michael123', user)
-  
-    // // Load the Document and print it
-    // // Prints Content and Metadata of the stored Document
-    // let getResult = await collection.get('michael123')
-    // console.log('Get Result: ', getResult)
-        
-            // // Perform a SQL++ (N1QL) Query
-            // const queryResult = await bucket
-            //   .scope('_default')
-            //   .query('SELECT name FROM `airline` WHERE country=$1 LIMIT 10', {
-            //     parameters: ['United States'],
-            //   })
-            // console.log('Query Results:')
-            // queryResult.rows.forEach((row) => {
-            //   console.log(row)
-            // })
+            return res.status(200).json({user : myUserObject})
+
+});
+
+console.log("running main function")
+export const main = async () => {
+    connectCapella()
+
 }
 // Run the main function
 main()
@@ -250,124 +265,7 @@ main()
     console.log('ERR:', err)
     process.exit(1)
   })
-//   .then(() => process.exit(0))
-//   /******************************************** ENDPOINT HIT */
-// const router = express.Router();
-// app.post("/users", async (req: Request, res: Response) => {
-// // router.route("/users").post(async (req: Request, res: Response) => {
-// // router.route("").post(async (req: Request, res: Response) => {
-//     // /users route 
-//     console.log("Hitting users endpoint")
-//     //   const {usersCollection} = await connectToDatabase();
-//     //   console.log(usersCollection, "USERS COLLECTION")
-  
-    
-//     //   const username = req.body.username;
-//     //   const email =req.body.email
-//     //   const password =req.body.pass
-//     // const user = {name : username}
-//     // already defined below - delete ^
-  
-//     const cluster = await couchbase.connect(clusterConnStr, {
-//       username: username,
-//       password: password,
-//       // Sets a pre-configured profile called "wanDevelopment" to help avoid latency issues
-//       // when accessing Capella from a different Wide Area Network
-//       // or Availability Zone (e.g. your laptop).
-//       configProfile: 'wanDevelopment',
-//     })
-  
-//     console.log("Here is the Cluster: ", cluster)
-//     const bucket = cluster.bucket(bucketName)
-//     console.log("Here is the Bucket: ", bucket)
-//     // Get a reference to the default collection, required only for older Couchbase server versions
-//     // const defaultCollection = bucket.defaultCollection()
-  
-//     const usersCollection = bucket.scope('_default').collection('users')
-  
-//     const users : Users = {
-//         username : req.body.username,
-//     email :req.body.email,
-//     password : bcrypt.hashSync(req.body.pass, 10)
-//         }
-//         console.log(users, "USERS")
-//         const requiredParams = [users.username, users.email, users.password]
-  
-//         for (let param of requiredParams){
-//         if (!req.body[param]){
-//             return res.status(400).send({
-//             message: `${param} is required`
-//             })
-//         }
-//         }
-  
-//         // Generate a unique id for the user and save to a variable
-//         const id: string = v4()
-//         // Create and store a document
-//         await usersCollection
-//         .upsert(id, users)
-//         .then((result: any) => {
-//             return res.send({...users, ...result});
-//         })
-//         .catch((e: {message: any}) => {
-//             return res.status(500).send({
-//             message: `User Insert Failed: ${e.message}`,
-//             });
-//         });
-//         // Load the Document and print it
-//         // Prints Content and Metadata of the stored Document
-//         let getResult = await usersCollection.get(id)
-//         console.log('Get Result: ', getResult)
-//         res.send("hi /users")
-//         return res.send()
-  
-//                 //   const accessToken = jwt.sign(user, SECRET)
-//                 //   res.json({accessToken: accessToken})
-  
-//                 //  // Load the Document and print it
-//                 //     // Prints Content and Metadata of the stored Document
-//                 //     let getResult = await usersCollection.get(id)
-//                 //     console.log('Get Result: ', getResult)
-  
-//                 // //   const id = v4();
-//                 //   const users = {
-//                 //     pid: id,
-//                 //     ...req.body,
-//                 //     pass: bcrypt.hashSync(password, 10),
-//                 //   };
-//                 //   console.log(users, "USERS")
-  
-//                 //   await usersCollection
-//                 //     .insert(id, users)
-//                 //     .then((result: any) => {
-//                 //       return res.send({...users, ...result});
-//                 //     })
-//                 //     .catch((e: {message: any}) => {
-//                 //       return res.status(500).send({
-//                 //         message: `User Insert Failed: ${e.message}`,
-//                 //       });
-//                 //     });
-  
-//                 //     return res.send()
-//                     // // return res.status(500)
-//                     // return res.status(500).send({
-//                     //   message: `Something went wrong}`,
-//                     // });
-//     });
-//       /********************** ENDPOINT HIT FINISHED */
-// export const generateAccessToken = function() {
-//     const accessToken = jwt.sign({
-//             "user": {
-//                 "id": req.body.users.id,
-//                 "email": req.body.users.email,
-//                 "password": req.body.users.password
-//             }
-//         },
-//         SECRET,
-//         { expiresIn: "1d"}
-//     );
-//     return accessToken;
-// }
+
 const port = parseInt(process.env.APP_PORT || '') || 3002;
 app.listen(port)
 // ensureIndexes()
