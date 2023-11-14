@@ -1,5 +1,6 @@
-const jwt = require('jsonwebtoken');
-const SECRET = process.env.SECRET
+// const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken'
+const SECRET = process.env.SECRET as string
 
 const verifyJWT = (req, res, next) => {
     // console.log("REQUEST Headers", req.headers)

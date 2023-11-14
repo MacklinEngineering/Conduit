@@ -1,32 +1,22 @@
 import express, {Request, Response} from 'express';
-import bcrypt from 'bcryptjs';
-import {v4} from 'uuid';
 import cors from 'cors';
-import corsOptions from '../config/corsOptions';
+import corsOptions from '../config/corsOptions.js';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import * as couchbase from 'couchbase';
-import jwt from 'jsonwebtoken';
-import {connectToDatabase} from './db/connection';
-import genUniqueId from './utils/genUniqueId';
-import expressJwt from "express-jwt";
-import verifyJWT from './verifyJWT';
-import { userInfo } from 'os';
-import bodyParser from 'body-parser';
-// import {cache} from './cache'
-import users from "./routes/users";
-import articles from "./routes/articles";
-import profiles from "./routes/profiles";
-import tags from "./routes/tags";
-import comments from "./routes/comments";
-import favorites from "./routes/favorites";
-import { connectCapella}  from './db/connect_to_capella';
-import { request } from 'http';
-// import {token} from "../src/routes/users"
+import verifyJWT from './verifyJWT.js';
+import users from "./routes/users.js";
+import articles from "./routes/articles.js";
+import profiles from "./routes/profiles.js";
+import tags from "./routes/tags.js";
+import comments from "./routes/comments.js";
+import favorites from "./routes/favorites.js";
+import { connectCapella}  from './db/connect_to_capella.js';
+import {clusterConnStr,capellaUsername, capellaPassword , bucketName, cluster, bucket, usersCollection, profilesCollection, articlesCollection, commentsCollection, favoritesCollection, tagsCollection, couchbaseConnection} from "./db/plug.ts"
+
+
 export const app = express();
 app.use(cors(corsOptions));
-// app.use(["/users", "/articles", "/articles/:slug/comments", "/articles/:slug/favorite", "profiles/:username", "tags"])
-//use the file names in quoatations to handle each respective endpoint that starts with the file name
 app.use("/users", users)
 app.use("/articles", articles)
 app.use("/profiles/:username", profiles)
@@ -63,7 +53,6 @@ if (!CB_USER) {
 const swaggerDocument = YAML.load('./swagger.yaml');
 const SECRET = process.env.SECRET || "Mys3cr3tk3y"
 console.log("app is HUR")
-// app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use('/swagger-ui', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
@@ -82,59 +71,67 @@ interface Users {
     id: string;
  } 
 
- let token: any
- export const clusterConnStr = 'couchbases://cb.yfxtafw9ud1ccllx.cloud.couchbase.com'
-export const capellaUsername = 'Admin1'
-export const capellaPassword = 'Password1!'
-export const bucketName = 'ConduitDemo'
-//token,
+let token: any
 
-// console.log(token)
+async function createAllPrimaryIndexes(){
+  const userBucketIndex = ​`CREATE PRIMARY INDEX ON Conduit1.blog.users` 
+  const profileBucketIndex = ​`CREATE PRIMARY INDEX ON Conduit1.blog.profiles` 
+  const articleBucketIndex = ​`CREATE PRIMARY INDEX ON Conduit1.blog.articles`    
+  const commentBucketIndex = ​`CREATE PRIMARY INDEX ON Conduit1.blog.comments`   
+    try{
+        await cluster.query(userBucketIndex)
+    console.log("USERS BUCKET INDEX CREATION SUCCESS")
+    }
+    catch (err){
+        if (err instanceof couchbase.IndexExistsError) {
+            console.info('Users Bucket Index Creation: Index Already Exists')
+        } else {
+            console.error(err)
+        }
+    }
+    try{
+        await cluster.query(profileBucketIndex)
+    console.log("PROFILES BUCKET INDEX CREATION SUCCESS")
+    }
+    catch (err){
+        if (err instanceof couchbase.IndexExistsError) {
+            console.info('Profiles Bucket Index Creation: Index Already Exists')
+        } else {
+            console.error(err)
+        }
+    }
+     
+      try{
+          await cluster.query(articleBucketIndex)
+      console.log("ARTICLES BUCKET INDEX CREATION SUCCESS")
+      }
+      catch (err){
+          if (err instanceof couchbase.IndexExistsError) {
+              console.info('Articles Bucket Index Creation: Index Already Exists')
+          } else {
+              console.error(err)
+          }
+      }
+      try{
+          await cluster.query(commentBucketIndex)
+      console.log("COMMENTS BUCKET INDEX CREATION SUCCESS")
+      }
+      catch (err){
+          if (err instanceof couchbase.IndexExistsError) {
+              console.info('Comments Bucket Index Creation: Index Already Exists')
+          } else {
+              console.error(err)
+          }
+      }
+    
+}
+createAllPrimaryIndexes()
 
 app.get("/user", verifyJWT, async ( req: Request, res: Response) => {
-  // app.get("/user", verifyJWT, bodyParser.json(), async ( req: Request, res: Response) => {
-//How do I return the user?
     console.log("YOO INSIDE GET", req.headers)
     const token = req.header("authorization")?.replace("Token ","")
     console.log(token)
-    // const id: string = v4()
-        // res.append(id)
-        //TODO: Check if the email is already in use
-        //Then, fail this and notify the user
-        const cluster = await couchbase.connect(clusterConnStr, {
-          username: capellaUsername,
-          password: capellaPassword,
-          // Sets a pre-configured profile called "wanDevelopment" to help avoid latency issues
-          // when accessing Capella from a different Wide Area Network
-          // or Availability Zone (e.g. your laptop).
-          configProfile: 'wanDevelopment',
-        })
-      
-        // console.log("Here is the Cluster: ", cluster)
-        const bucket = cluster.bucket(bucketName)
-        // console.log("Here is the Bucket: ", bucket)
-        // Get a reference to the default collection, required only for older Couchbase server versions
-        // const defaultCollection = bucket.defaultCollection()
-      
-        const usersCollection = bucket.scope('blog').collection('users')
-        const profilesCollection = bucket.scope('blog').collection('profiles')
-        const articlesCollection = bucket.scope('blog').collection('articles')
-        const commentsCollection = bucket.scope('blog').collection('comments')
-        const favoritesCollection = bucket.scope('blog').collection('favorites')
-        const tagsCollection = bucket.scope('blog').collection('tags')
-  
-        let couchbaseConnection = {
-          cluster,
-          bucket,
-          // collection,
-          usersCollection,
-          profilesCollection,
-          articlesCollection,
-          commentsCollection,
-          favoritesCollection,
-          tagsCollection
-        }
-
+   
         const queryResult = await bucket
             .scope('blog')                                //turn into template literal
             .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {
@@ -162,51 +159,12 @@ app.put("/user", verifyJWT, async ( req: Request, res: Response) => {
   //Take whatever the user inputs into each field and replace that with the new req.body.blah
   //If the user doesn't update something, keep the previous value
 
-
-
-
-  // app.get("/user", verifyJWT, bodyParser.json(), async ( req: Request, res: Response) => {
-//How do I return the user?
     console.log("YOO INSIDE PUT", req.headers)
     const token = req.header("authorization")?.replace("Token ","")
     console.log(token)
-    // const id: string = v4()
-        // res.append(id)
+
         //TODO: Check if the email is already in use
         //Then, fail this and notify the user
-        const cluster = await couchbase.connect(clusterConnStr, {
-          username: capellaUsername,
-          password: capellaPassword,
-          // Sets a pre-configured profile called "wanDevelopment" to help avoid latency issues
-          // when accessing Capella from a different Wide Area Network
-          // or Availability Zone (e.g. your laptop).
-          configProfile: 'wanDevelopment',
-        })
-      
-        // console.log("Here is the Cluster: ", cluster)
-        const bucket = cluster.bucket(bucketName)
-        // console.log("Here is the Bucket: ", bucket)
-        // Get a reference to the default collection, required only for older Couchbase server versions
-        // const defaultCollection = bucket.defaultCollection()
-      
-        const usersCollection = bucket.scope('blog').collection('users')
-        const profilesCollection = bucket.scope('blog').collection('profiles')
-        const articlesCollection = bucket.scope('blog').collection('articles')
-        const commentsCollection = bucket.scope('blog').collection('comments')
-        const favoritesCollection = bucket.scope('blog').collection('favorites')
-        const tagsCollection = bucket.scope('blog').collection('tags')
-  
-        let couchbaseConnection = {
-          cluster,
-          bucket,
-          // collection,
-          usersCollection,
-          profilesCollection,
-          articlesCollection,
-          commentsCollection,
-          favoritesCollection,
-          tagsCollection
-        }
 
         const userQuery = await bucket
             .scope('blog')                                //turn into template literal
@@ -254,7 +212,7 @@ app.put("/user", verifyJWT, async ( req: Request, res: Response) => {
 
 });
 
-console.log("running main function")
+console.log("running main function HEEHEE")
 export const main = async () => {
     connectCapella()
 
@@ -268,13 +226,5 @@ main()
 
 const port = parseInt(process.env.APP_PORT || '') || 3002;
 app.listen(port)
-// ensureIndexes()
-// module.exports = {app, ensureIndexes};
-module.exports = {app};
-//   // Run the main function
-//   main()
-//     .catch((err) => {
-//       console.log('ERR:', err)
-//       process.exit(1)
-//     })
-//     .then(process.exit)
+
+export default app

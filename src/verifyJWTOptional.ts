@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const SECRET = process.env.SECRET
+import jwt from 'jsonwebtoken'
+const SECRET = process.env.SECRET as string
 
 const verifyJWTOptional = (req, res, next) => {
     const authHeader = req.headers.authorization || req.headers.Authorization
