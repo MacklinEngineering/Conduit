@@ -11,9 +11,9 @@ import profiles from "./routes/profiles.js";
 import tags from "./routes/tags.js";
 import comments from "./routes/comments.js";
 import favorites from "./routes/favorites.js";
-import { connectCapella}  from './db/connect_to_capella.js';
-import {clusterConnStr,capellaUsername, capellaPassword , bucketName, cluster, bucket, usersCollection, profilesCollection, articlesCollection, commentsCollection, favoritesCollection, tagsCollection, couchbaseConnection} from "./db/plug.ts"
-
+import { connectCapella}  from './db/connect_to_capella.ts';
+import {clusterConnStr,capellaUsername, bucketName, cluster, bucket, usersCollection, profilesCollection, articlesCollection, commentsCollection, favoritesCollection, tagsCollection, couchbaseConnection} from "./db/plug.ts"
+console.log("in app.ts")
 
 export const app = express();
 app.use(cors(corsOptions));
@@ -69,15 +69,16 @@ interface Users {
     image: string;
     token: string;
     id: string;
- } 
+ }
 
 let token: any
 
-async function createAllPrimaryIndexes(){
+export async function createAllPrimaryIndexes(){
   const userBucketIndex = ​`CREATE PRIMARY INDEX ON Conduit1.blog.users` 
   const profileBucketIndex = ​`CREATE PRIMARY INDEX ON Conduit1.blog.profiles` 
   const articleBucketIndex = ​`CREATE PRIMARY INDEX ON Conduit1.blog.articles`    
-  const commentBucketIndex = ​`CREATE PRIMARY INDEX ON Conduit1.blog.comments`   
+  const commentBucketIndex = ​`CREATE PRIMARY INDEX ON Conduit1.blog.comments` 
+  // const tagsBucketCreation =  ​`CREATE PRIMARY INDEX ON Conduit1.blog.tags`  
     try{
         await cluster.query(userBucketIndex)
     console.log("USERS BUCKET INDEX CREATION SUCCESS")
@@ -133,7 +134,7 @@ app.get("/user", verifyJWT, async ( req: Request, res: Response) => {
     console.log(token)
    
         const queryResult = await bucket
-            .scope('blog')                                //turn into template literal
+            .scope('blog')                                
             .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {
             })
 
@@ -143,7 +144,7 @@ app.get("/user", verifyJWT, async ( req: Request, res: Response) => {
 
     console.log("QUERY RESULT :", queryResult)
     const userId = queryResult["rows"][0].users.id
-    let getResult = {"user" : await usersCollection.get(userId)} //wrong but just a placeholder
+    let getResult = {"user" : await usersCollection.get(userId)} 
     console.log('Get Result: ', getResult )
 
     const myUserObject = getResult.user.content
@@ -227,4 +228,4 @@ main()
 const port = parseInt(process.env.APP_PORT || '') || 3002;
 app.listen(port)
 
-export default app
+export default {app, createAllPrimaryIndexes}

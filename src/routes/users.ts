@@ -24,7 +24,7 @@ export interface Users {
 
 
 router
-    .route("") // /users
+    .route("") 
     .post(bodyParser.json(), async (req: Request, res: Response) => {
         const {user} = req.body
    
@@ -44,18 +44,13 @@ router
         
         await usersCollection
         .upsert(userId, users)
-        .then(async (result: any) => {
-            console.log("The Upsert Works")
-            // Load the Document and print it
-            // Prints Content and Metadata of the stored Document
-            //TODO: Requires refactor to programmatically add to user nested object 
+        .then(async (result: any) => {          
 
         let getResult = {"user" : await usersCollection.get(userId)}
     
         console.log('Get Result: ', getResult )
 
         const myUserObject = getResult.user.content
-        console.log(myUserObject, "MY USER OBJECT")
 
         return res.status(201).json({"user" : myUserObject})
         })
@@ -67,13 +62,6 @@ router
 
 });
         
-        
-       
-
-​
-  
-                
-​
 /**** 
  Description: Login a registered user 
  Route: /api/users/login
@@ -124,14 +112,12 @@ router
             bio: "",
             image: "",
             token: accessToken,
-            id: idResult2 //why did I re-add? What did I need this for? 
-                            //Maybe to use to replace the user object with th enew one with a token 
+            id: idResult2  
         }
         console.log("USERS in login", users)
     
         await usersCollection
-            .replace(users.id, users)  //rewrites the entire document, have to learn how "mutateIn" method works for optimization
-            // .upsert(users.id, users )
+            .replace(users.id, users) 
             .then((result: any) => {
                 console.log("The Replace Works")
                 // return res.send({...users, ...result});
@@ -141,12 +127,6 @@ router
                 message: `User Insert Failed: ${e.message}`,
                 });
             });
-    
-            // Load the Document and print it
-            // Prints Content and Metadata of the stored Document
-    
-    
-            //TODO: Requires refactor to programmatically add to user nested object 
     
             let loggedInUserResult = {"user" : await usersCollection.get(users.id)}
         
@@ -169,38 +149,28 @@ router
             .query(`SELECT * FROM \`users\` WHERE email='${req.body.user.email}';`, {
             })
             
-    
+
             queryResult.rows.forEach((row) => {
             console.log("ROWS IN THE WORKING QUERY", row)
             })
             return queryResult
             }
             
-          //Now login
           loginUser()
           .then(res2 => { 
                 if (res2["rows"].length===0) {
                     return res.status(404).json({errors: { message: 'User Not Found' }});
                 }
-                // console.log("ROWS", res2["rows"]) //Gives UserPassword in Rows object
                 let loggedInUserPassword = res2["rows"][0].users.password
-                // console.log(loggedInUserPassword)
 
                 res2["rows"]
                 .forEach(async (row: { loggedInUserPassword: string; }) => {
                     console.log("I'm about to Try Catch")
-                                // console.log("PASSWORD",req.body.user.password, loggedInUserPassword)
                                 const match = await bcrypt.compare(req.body.user.password, loggedInUserPassword);
-                                // console.log(match)
                                 if (!match) {
-                                    console.log("NO match, ", match) //showing NO MATCH when passwords are the same?
-
                                     return res.status(401).json({errors: { message: 'Unauthorized: Wrong password' }})
                                 }else {
-                                    // console.log("ITS A MATCH")
-                                   
                                     const headers = { headers: { 'Authorization': 'Token ' + users.token } };
-                                    // console.log("HEADERS: ", headers)
                                     return res.status(200).json({
                                         headers: headers,
                                         user: users

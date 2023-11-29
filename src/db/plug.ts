@@ -1,6 +1,6 @@
 import * as couchbase from 'couchbase';
 
-export const clusterConnStr = 'couchbases://cb.v0wbkoon3f5oxbeh.cloud.couchbase.com'
+export const clusterConnStr = 'couchbases://cb.dlsvbws6r9lcer4b.cloud.couchbase.com'
 export const capellaUsername = 'Admin1'
 export const capellaPassword = 'Password1!'
 export const bucketName = 'Conduit1'
