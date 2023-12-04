@@ -22,7 +22,6 @@ export interface Users {
    id: string;
 }
 
-
 router
     .route("") 
     .post(bodyParser.json(), async (req: Request, res: Response) => {
@@ -40,7 +39,6 @@ router
         id: userId
         }
 ​
-        console.log(users, "USERS")
         
         await usersCollection
         .upsert(userId, users)
@@ -48,8 +46,6 @@ router
 
         let getResult = {"user" : await usersCollection.get(userId)}
     
-        console.log('Get Result: ', getResult )
-
         const myUserObject = getResult.user.content
 
         return res.status(201).json({"user" : myUserObject})
@@ -73,16 +69,10 @@ router
 router
     .route("/login") 
     .post(bodyParser.json(), async (req: Request, res: Response, getResult) => {
-        console.log("Hello inside login")
-    console.log("RESUEST, ", req.body) //only has email and password inside 
-    
-
-​
         const accessToken = jwt.sign({
                 "user": {
-                    // "id": this.id,
-                    "email": req.body.user.email, //this.email,
-                    "password": req.body.user.password,//this.password
+                    "email": req.body.user.email, 
+                    "password": req.body.user.password,
                 }
             },
             SECRET,
@@ -96,17 +86,10 @@ router
             })
           let idResult2 =  idResult.rows[0].users.id
             
-            console.log("ID RESULT2", idResult2)
-
-            // GEt the password from the database and input into the new document 
-
-            
           let passwordResult =  idResult.rows[0].users.password
-            //place ID in new user object
            
         const users : Users = {
-            // username : username,
-            username: '', //TODO: GRAB THE USERNAME FROM CB OR OLD RESPONSE
+            username: '',
             email: req.body.user.email,
             password: passwordResult,
             bio: "",
@@ -114,82 +97,61 @@ router
             token: accessToken,
             id: idResult2  
         }
-        console.log("USERS in login", users)
     
         await usersCollection
             .replace(users.id, users) 
-            .then((result: any) => {
-                console.log("The Replace Works")
-                // return res.send({...users, ...result});
-            })
+            .then(async (result: any) => {
+                let loggedInUserResult = {"user" : await usersCollection.get(users.id)}
+        
+    
+                const myUserObject = loggedInUserResult.user.content
+            
+            const {user} = req.body
+        
+    ​       let loginUser = async function queryNamed() {
+       
+                const queryResult = await bucket
+                .scope('blog')
+                .query(`SELECT * FROM \`users\` WHERE email='${req.body.user.email}';`, {
+                })
+                
+                return queryResult
+                }
+                
+              loginUser()
+              .then(res2 => { 
+                    if (res2["rows"].length===0) {
+                        return res.status(404).json({errors: { message: 'User Not Found' }});
+                    }
+                    let loggedInUserPassword = res2["rows"][0].users.password
+    
+                    res2["rows"]
+                    .forEach(async (row: { loggedInUserPassword: string; }) => {
+                                    const match = await bcrypt.compare(req.body.user.password, loggedInUserPassword);
+                                    if (!match) {
+                                        return res.status(401).json({errors: { message: 'Unauthorized: Wrong password' }})
+                                    }else {
+                                        const headers = { headers: { 'Authorization': 'Token ' + users.token } };
+                                        return res.status(200).json({
+                                            headers: headers,
+                                            user: users
+                                        });
+                                        
+                                    }
+                ​
+                               
+                            }) 
+                return
+                 
+    ​
+            })            })
             .catch((e: {message: any}) => {
                 return res.status(500).send({
                 message: `User Insert Failed: ${e.message}`,
                 });
             });
-    
-            let loggedInUserResult = {"user" : await usersCollection.get(users.id)}
-        
-            console.log('Get Result: ', loggedInUserResult )
-    
-            const myUserObject = loggedInUserResult.user.content
-            console.log(myUserObject, "MY USER OBJECT AFTER REPLACE METHOD WITH TOKEN AND ID")
-        
-        console.log(users, "USERS")
-        const {user} = req.body
-        
-​
-        
-​       let loginUser = async function queryNamed() {
-            console.log("OH EHY BABY")
-    // Perform a SQL++  Query
-   
-            const queryResult = await bucket
-            .scope('blog')
-            .query(`SELECT * FROM \`users\` WHERE email='${req.body.user.email}';`, {
-            })
-            
-
-            queryResult.rows.forEach((row) => {
-            console.log("ROWS IN THE WORKING QUERY", row)
-            })
-            return queryResult
-            }
-            
-          loginUser()
-          .then(res2 => { 
-                if (res2["rows"].length===0) {
-                    return res.status(404).json({errors: { message: 'User Not Found' }});
-                }
-                let loggedInUserPassword = res2["rows"][0].users.password
-
-                res2["rows"]
-                .forEach(async (row: { loggedInUserPassword: string; }) => {
-                    console.log("I'm about to Try Catch")
-                                const match = await bcrypt.compare(req.body.user.password, loggedInUserPassword);
-                                if (!match) {
-                                    return res.status(401).json({errors: { message: 'Unauthorized: Wrong password' }})
-                                }else {
-                                    const headers = { headers: { 'Authorization': 'Token ' + users.token } };
-                                    return res.status(200).json({
-                                        headers: headers,
-                                        user: users
-                                    });
-                                    
-                                }
-            ​
-                           
-                        }) 
-            return
-             
-​
-        })
-​
 });
-​
-​
-​
-​
+
 export default router
 
 

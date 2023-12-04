@@ -44,7 +44,7 @@ export interface Article{
        
  
 router
-    .route("") // /articles
+    .route("")
     .get(bodyParser.json(), verifyJWTOptional,  async (req: Request, res: Response) => {
         const author = req.query.author
            
@@ -59,82 +59,43 @@ router
             let offset = req.query.offset;
         }
 
-          //Might not need to run a query for the user
           const userQuery = await bucket
               .scope('blog')                               
               .query(`SELECT * FROM \`articles\`;`, {
               })
 
-            //deleteing extra articles key on object
               let newArticles : Article[] = []
               userQuery.rows.forEach((row) => {
               newArticles.push(row.articles)
       })
-  
-    //   console.log("QUERY RESULT GET ARTICLES :", newArticles)
-    //   if (req.query.tagList) {
-    //     // tagList = [ 'training', 'dragons' ]
-    //     // let filteredArticles = newArticles.filter(document => tagList.includes(document.author.username)
-    //     // newArticles.filter("")
-    //     //TODO: NEED TO FIX
-    //     // let query[`"${req.query.tag}"`] = { $in: { $field: 'tagList' } }
-    //     // query.tagList = { $in: [req.query.tag] } // Works with
-    // }
 
       const articles: Articles = {
         articlesCount: userQuery.rows.length,
         articles: newArticles
       }
-
-    //   let favoritesCount = databaseArticle.favoritesCount+1
-
         
       return res.status(200).json(articles)
    
-
-
     });  
 
 router
-    .route("") // /articles
+    .route("")
     .post(verifyJWT, bodyParser.json(), async (req: Request, res: Response) => {
         const token = req.header("authorization")?.replace("Token ","")
-        console.log("Got into POST /articles")
-
-          //Search if there are any articles at all - return up to 20 of them
-         
-          //Also, if user enters a param, search any articles by that username
-
-          //Grab the user by the token
           const userQuery = await bucket
               .scope('blog')                               
               .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {
               })
-  
-              userQuery.rows.forEach((row) => {
-            console.log("WHAT IS THIS", row)
-      })
-
-      //grab that users bio, image, and username - populate the article object 
-
-  
-    //   console.log("QUERY RESULT POST:", userQuery["rows"])
-
-       //Create an Article
-       console.log(req.body)
+     
        let databaseUser = userQuery["rows"][0].users
        let slug = req.body.article.title.replace(/ /g,'-')
        let date = new Date().toISOString()
        let favorited = false
        let favoritedCount = 0
 
-         
-        
-        ///TODO: ISSUE - TAGS LIST FOR TAGS ONLY YOU HAVE MADE - NOT EVERY USER :()
         req.body.article.tagList.forEach((item) => {
             tagsMegaList.push(item)
       })
-      console.log("MEGA LIST OF TAGS:", tagsMegaList)
        
        const article: Article = {
         slug: slug, 
@@ -156,42 +117,33 @@ router
       
     
       const getResult = await articlesCollection
-      .upsert(databaseUser.id, article)  //rewrites the entire document, have to learn how "mutateIn" method works for optimization
-      .then((result: any) => {
-          console.log("The Article Upsert Works")
+      .upsert(databaseUser.id, article) 
+      .then(async (result: any) => {
+        let articleResult = {"article" : await articlesCollection.get(databaseUser.id)}
+          
+        const myArticle = articleResult.article.content
+                  return res.status(200).json({article : myArticle})
       })
       .catch((e: {message: any}) => {
           return res.status(500).send({
           message: `Article Upsert Failed: ${e.message}`,
           });
       });
-        
-    
-      let articleResult = {"article" : await articlesCollection.get(databaseUser.id)}
-    
-      console.log('Create Article Result: ', articleResult )
-    
-      const myArticle = articleResult.article.content
-      console.log(myArticle, "MY ARTICLE")
-                return res.status(200).json({article : myArticle})
               
     });
 
 router
-    .route("/feed") // /articles/feed
+    .route("/feed")
     .get(bodyParser.json(), verifyJWT, async (req: Request, res: Response) => {
         
-          //Grab the user by the token
           const profilesQuery = await bucket
               .scope('blog')                               
               .query(`SELECT * FROM \`profiles\``, {
               })
 
             //Establish a usernames array to do the query 
-              let userNames : string[] = [] //["dsfsdf"] //We need articles by 
+              let userNames : string[] = []  
               profilesQuery.rows.forEach((row) => {
-                console.log("Article Feed Profiles Following", row.profiles)
-            //if I am following a user, push that username into the usernames array
             if(row.profiles.following) userNames.push(row.profiles.username)
              })
 
@@ -200,57 +152,44 @@ router
              .query(`SELECT * FROM \`articles\`;`, {
              })
 
-     
-             console.log("Article Feed Usernames Following", userNames)
-
-             //   //deleteing extra articles key on object
+             //Delete extra articles key on object
                     let newArticles : Article[] = []
                     articlesQuery.rows.forEach((row) => {
             newArticles.push(row.articles)
             })
       
-
              let filteredArticles = newArticles.filter(document => userNames.includes(document.author.username))
-            console.log("FILTERED ARTICLES", filteredArticles)
    
         return res.status(200).json(  {articles: filteredArticles, articlesCount: filteredArticles.length}   )
     }); 
 
 router
-    .route("/:slug") // /articles/feed
+    .route("/:slug") 
     .get(bodyParser.json(),verifyJWTOptional, async (req: Request, res: Response) => {
         
         var slug = req.params['slug'] 
-   
-    console.log("Slug :",slug);
-        
+           
         const articlesQuery = await bucket
         .scope('blog')                                //turn into template literal
         .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {
         })
 
-        console.log("Articles", articlesQuery)
         let singleArticleFromQuery = articlesQuery.rows[0].articles
-        console.log("Articles", singleArticleFromQuery)
         return res.status(200).json(  {article: singleArticleFromQuery}   )
         
     });
     
 router
-    .route("/:slug") // /articles/feed
+    .route("/:slug") 
     .put(bodyParser.json(),verifyJWT, async (req: Request, res: Response) => {
         const token = req.header("authorization")?.replace("Token ","")
         var slug = req.params['slug'] 
    
-        console.log("Slug :",slug);
-
             const userQuery = await bucket
             .scope('blog')                               
             .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {
             })
 
-
-            console.log("QUERY RESULT :", userQuery)
             let databaseUser = userQuery.rows[0].users
 
             const articlesQuery = await bucket
@@ -259,12 +198,8 @@ router
             })
     
 
-            //Update Article 
-            console.log("QUERY RESULT :", articlesQuery)
             let databaseArticle = articlesQuery.rows[0].articles
-            console.log("DATABVASE ARTICLE:", databaseArticle)
             let inputData = req.body.article
-            console.log("inputData", inputData)
         
             //Loop through the User request body and update the document object for each key inputted
             Object.keys(inputData).forEach(key => {
@@ -273,45 +208,32 @@ router
 
             
             const getResult = await articlesCollection
-            .replace(databaseUser.id, databaseArticle)  //rewrites the entire document, have to learn how "mutateIn" method works for optimization
-            .then((result: any) => {
-                console.log("The Replace Works")
+            .replace(databaseUser.id, databaseArticle)
+            .then(async (result: any) => {
+                let updateArticleResult = {"article" : await articlesCollection.get(databaseUser.id)}
+                    
+            const myArticleObject = updateArticleResult.article.content    
+    
+        return res.status(200).json(  {article: myArticleObject}   )
             })
             .catch((e: {message: any}) => {
                 return res.status(500).send({
                 message: `User Insert Failed: ${e.message}`,
                 });
             });
-          
-            // Load the Document and print it
-            // Prints Content and Metadata of the stored Document
-                    
-            let updateArticleResult = {"article" : await articlesCollection.get(databaseUser.id)}
-          
-            console.log('Update Article Result: ', updateArticleResult )
-          
-            const myArticleObject = updateArticleResult.article.content
-            console.log(myArticleObject, "MY USER OBJECT AFTER REPLACE METHOD WITH TOKEN AND ID")
-    
-    
-        return res.status(200).json(  {article: myArticleObject}   )
     }); 
 
 router
-    .route("/:slug") // /articles/feed
+    .route("/:slug") 
     .delete(bodyParser.json(),verifyJWT, async (req: Request, res: Response) => {
         const token = req.header("authorization")?.replace("Token ","")
         var slug = req.params['slug'] 
-   
-        console.log("Slug :",slug);
-    
+       
             const userQuery = await bucket
             .scope('blog')                               
             .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {
             })
 
-
-            console.log("QUERY RESULT :", userQuery)
             let databaseUser = userQuery.rows[0].users
 
             const articlesQuery = await bucket
@@ -319,13 +241,11 @@ router
             .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {
             })
 
-
              let databaseArticle = articlesQuery.rows[0].articles
-             console.log("Database Article", databaseArticle)
             const getResult = await articlesCollection
             .remove(databaseUser.id, databaseArticle)  //rewrites the entire document, have to learn how "mutateIn" method works for optimization
             .then((result: any) => {
-                console.log("The Replace Works")
+                return res.status(200).json(  {article: databaseArticle}   )
             })
             .catch((e: {message: any}) => {
                 return res.status(500).send({
@@ -333,7 +253,6 @@ router
                 });
             });
 
-            return res.status(200).json(  {article: databaseArticle}   )
         
     });
 

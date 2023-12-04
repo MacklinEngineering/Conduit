@@ -19,18 +19,13 @@ export interface Users {
 router
     .route("") 
     .get(bodyParser.json(), async (req: Request, res: Response) => {
-        //Searches through articles and takes all tags and appends to massive tags array
-        //returns that array of tags
-        console.log(tagsMegaList)
-       
-        //Get ALL Articles
+        
         const articlesQuery = await bucket
               .scope('blog')                               
               .query(`SELECT * FROM \`articles\` WHERE tagList!='';`, {
               })
                 
         articlesQuery["rows"].forEach((row) => tagsMegaList.push(row.articles.tagList))
-        // console.log(tagsMegaList.values())
 
         return res.status(200).json(  {tags: tagsMegaList}   )
     })
