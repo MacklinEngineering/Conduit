@@ -13,8 +13,9 @@ For more information on how to this works with other frontends/backends, head ov
 # Getting started
 
 1. install npm
-1. Run `npm install` in the project folder
-1. Run `npm run dev` for dev mode and `npm run start` for regular mode
+2. Run `npm install` in the project folder
+3. Export your variables
+4. Run `npm run dev` for dev mode and `npm run start` for regular mode
 
 # How it works
 
@@ -25,5 +26,4 @@ For more information on how to this works with other frontends/backends, head ov
 TODO:
 
 - Only one `access_token_secret` is used for all the accounts registration and login. Drawback: data can be forged if this secret is leaked
-- Included array structures, e.g. list of comments in the article model and favorited articles in the user model. Drawback: not good for scalability
 - Usernames are case-sensitive
