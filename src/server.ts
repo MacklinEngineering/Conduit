@@ -1,4 +1,4 @@
-import {app, createAllPrimaryIndexes} from './app.ts';
+import { app, createAllPrimaryIndexes } from "./app.ts";
 
 const startApiServer = async () => {
   await createAllPrimaryIndexes().then(() => {

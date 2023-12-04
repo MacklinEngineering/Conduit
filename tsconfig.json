@@ -9,17 +9,12 @@
     "esModuleInterop": true,
     "allowImportingTsExtensions": true,
     "moduleResolution": "Node16",
-    "types": [
-      "node",
-    ],
+    "types": ["node"],
     "target": "es2022",
-    "module": "node16",
+    "module": "node16"
   },
   "ts-node": {
-    "esm": true,
+    "esm": true
   },
-  "include": [
-    "src/**/*.ts",
-    "test/**/*.ts"
-  ]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }

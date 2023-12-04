@@ -20,20 +20,20 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ProfileRequest'
+              $ref: "#/components/schemas/ProfileRequest"
       responses:
-        '200':
+        "200":
           description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProfileCreatedResponse'
-        '500':
+                $ref: "#/components/schemas/ProfileCreatedResponse"
+        "500":
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutProfileBadResponse'
+                $ref: "#/components/schemas/PutProfileBadResponse"
   /profile/{pid}:
     get:
       tags:
@@ -46,20 +46,20 @@ paths:
           description: ID of User Profile to return
           required: true
           schema:
-            type:  string
+            type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProfileBasic'
-        '500':
+                $ref: "#/components/schemas/ProfileBasic"
+        "500":
           description: KV Operation Failed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetProfileDocumentNotFound'
+                $ref: "#/components/schemas/GetProfileDocumentNotFound"
     put:
       tags:
         - profile
@@ -77,20 +77,20 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ProfileRequest'
+              $ref: "#/components/schemas/ProfileRequest"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProfileUpdateResponse'
-        '500':
+                $ref: "#/components/schemas/ProfileUpdateResponse"
+        "500":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutProfileDocumentNotFound'
+                $ref: "#/components/schemas/PutProfileDocumentNotFound"
     delete:
       tags:
         - profile
@@ -102,16 +102,16 @@ paths:
           required: true
           description: Profile ID
           schema:
-            type : string
+            type: string
       responses:
-        '200':
+        "200":
           description: OK
-        '500':
+        "500":
           description: Delete Failed
           content:
             application/json:
-              schema: 
-                $ref: '#/components/schemas/DeleteProfileDocumentNotFound'
+              schema:
+                $ref: "#/components/schemas/DeleteProfileDocumentNotFound"
   /profiles:
     get:
       tags:
@@ -138,18 +138,18 @@ paths:
           description: The text to search first and last name
           example: jo
       responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema: 
-                $ref: '#/components/schemas/ArrayOfProfiles'
-        '500':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetProfilesDocumentNotFound'
+                $ref: "#/components/schemas/ArrayOfProfiles"
+        "500":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetProfilesDocumentNotFound"
 components:
   schemas:
     ProfileRequest:
@@ -171,68 +171,68 @@ components:
           type: string
           example: Dohz
     ProfileBasic:
-      properties: 
+      properties:
         pid:
           type: string
-          example: '123456eb-1a2b-3c45-defg-67dhi89j0kl1'
+          example: "123456eb-1a2b-3c45-defg-67dhi89j0kl1"
         email:
           type: string
-          example: 'johndoh@couchbase.com'
+          example: "johndoh@couchbase.com"
         firstName:
           type: string
-          example: 'John'
+          example: "John"
         lastName:
           type: string
-          example: 'Dohz'
+          example: "Dohz"
         pass:
           type: string
-          example: '$h45h3d5tr1n6!'
+          example: "$h45h3d5tr1n6!"
     ProfileCreatedResponse:
       properties:
         pid:
           type: string
-          example: '123456eb-1a2b-3c45-defg-67dhi89j0kl1'
+          example: "123456eb-1a2b-3c45-defg-67dhi89j0kl1"
         email:
           type: string
-          example: 'johndoh@couchbase.com'
+          example: "johndoh@couchbase.com"
         pass:
           type: string
-          example: '$h45h3d5tr1n6!'
+          example: "$h45h3d5tr1n6!"
         firstName:
           type: string
-          example: 'John'
+          example: "John"
         lastName:
           type: string
-          example: 'Dohz'
+          example: "Dohz"
         cas:
           type: string
-          example: '1621568977675026432'
+          example: "1621568977675026432"
         token:
           type: string
-          example: '123456eb-1a2b-3c45-defg-67dhi89j0kl1'
+          example: "123456eb-1a2b-3c45-defg-67dhi89j0kl1"
     ProfileUpdateResponse:
       properties:
         pid:
           type: string
-          example: '123456eb-1a2b-3c45-defg-67dhi89j0kl1'
+          example: "123456eb-1a2b-3c45-defg-67dhi89j0kl1"
         email:
           type: string
-          example: 'johndoh@couchbase.com'
+          example: "johndoh@couchbase.com"
         pass:
           type: string
-          example: '$h45h3d5tr1n6!'
+          example: "$h45h3d5tr1n6!"
         firstName:
           type: string
-          example: 'John'
+          example: "John"
         lastName:
           type: string
-          example: 'Dohz'
+          example: "Dohz"
         cas:
           type: string
-          example: '1621568977675026432'
+          example: "1621568977675026432"
         token:
           type: string
-          example: '123456eb-1a2b-3c45-defg-67dhi89j0kl1'
+          example: "123456eb-1a2b-3c45-defg-67dhi89j0kl1"
     ArrayOfProfiles:
       type: array
       items:
@@ -244,40 +244,40 @@ components:
             type: string
           pass:
             type: string
-            example: 
+            example:
           firstName:
             type: string
           lastName:
             type: string
-            example: 
+            example:
       example:
-        - pid: '123456eb-1a2b-3c45-defg-67dhi89j0kl1'
-          email: 'johndohz@couchbase.com'
-          pass: '$h45h3d5tr1n6!'
-          firstname: 'John'
-          lastName: 'Dohz'
+        - pid: "123456eb-1a2b-3c45-defg-67dhi89j0kl1"
+          email: "johndohz@couchbase.com"
+          pass: "$h45h3d5tr1n6!"
+          firstname: "John"
+          lastName: "Dohz"
     GetProfileDocumentNotFound:
       properties:
         message:
           type: string
-          example: 'KV Operation Failed: document not found'
+          example: "KV Operation Failed: document not found"
     PutProfileBadResponse:
       properties:
         message:
           type: string
-          example: 'email and pass are required'
+          example: "email and pass are required"
     PutProfileDocumentNotFound:
       properties:
         message:
           type: string
-          example: 'Profile Not Found, cannot update: 123456eb-1a2b-3c45-defg-67dhi89j0kl1'
+          example: "Profile Not Found, cannot update: 123456eb-1a2b-3c45-defg-67dhi89j0kl1"
     DeleteProfileDocumentNotFound:
       properties:
         message:
           type: string
-          example: 'Profile Not Found, cannot update: 123456eb-1a2b-3c45-defg-67dhi89j0kl1'
+          example: "Profile Not Found, cannot update: 123456eb-1a2b-3c45-defg-67dhi89j0kl1"
     GetProfilesDocumentNotFound:
       properties:
         message:
           type: string
-          example: 'Query Failed: {Error Message}'
+          example: "Query Failed: {Error Message}"

@@ -1,11 +1,11 @@
-import * as couchbase from 'couchbase'
-import {cache} from './cache.js'
+import * as couchbase from "couchbase";
+import { cache } from "./cache.js";
 //  async function connectToDatabase() {
 //  const clusterConnStr = 'couchbases://cb.v0wbkoon3f5oxbeh.cloud.couchbase.com'
 //   const capellaUsername = 'Admin1'
 //   const capellaPassword = 'Password1!'
 //   const bucketName = 'Conduit1'
- 
+
 //   const cluster = await couchbase.connect(clusterConnStr, {
 //     username: capellaUsername,
 //     password: capellaPassword,
@@ -14,22 +14,22 @@ import {cache} from './cache.js'
 //     // or Availability Zone (e.g. your laptop).
 //     configProfile: 'wanDevelopment',
 //   })
-  
+
 //   //  {}
-  
+
 //   // console.log("Here is the Cluster: ", cluster)
 //    const bucket = cluster.bucket(bucketName)
 //   // console.log("Here is the Bucket: ", bucket)
 //   // Get a reference to the default collection, required only for older Couchbase server versions
 //   // const defaultCollection = bucket.defaultCollection()
-  
+
 //    const usersCollection = bucket.scope('blog').collection('users')
 //    const profilesCollection = bucket.scope('blog').collection('profiles')
 //    const articlesCollection = bucket.scope('blog').collection('articles')
 //    const commentsCollection = bucket.scope('blog').collection('comments')
 //    const favoritesCollection = bucket.scope('blog').collection('favorites')
 //    const tagsCollection = bucket.scope('blog').collection('tags')
-  
+
 //    let couchbaseConnection = {
 //     cluster,
 //     bucket,
@@ -44,7 +44,6 @@ import {cache} from './cache.js'
 // }
 
 // connectToDatabase()
-
 
 // const CB_USER = process.env.CB_USER
 // const CB_PASS = process.env.CB_PASS
@@ -176,6 +175,3 @@ import {cache} from './cache.js'
 
 // createCouchbaseCluster()
 // connectToDatabase()
-
-
-

@@ -3,7 +3,6 @@
  * Do not make direct changes to the file.
  */
 
-
 export interface paths {
   "/users": {
     /** @description Register a new user */
@@ -261,13 +260,11 @@ export interface components {
     };
     /** @description No content */
     EmptyOkResponse: {
-      content: {
-      };
+      content: {};
     };
     /** @description Unauthorized */
     Unauthorized: {
-      content: {
-      };
+      content: {};
     };
     /** @description Unexpected error */
     GenericError: {
@@ -339,7 +336,6 @@ export interface components {
 export type external = Record<string, never>;
 
 export interface operations {
-
   /** @description Register a new user */
   CreateUser: {
     requestBody: components["requestBodies"]["NewUserRequest"];
