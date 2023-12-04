@@ -4,9 +4,9 @@
 
 ### [Demo](https://demo.realworld.io/)&nbsp;&nbsp;&nbsp;&nbsp;[RealWorld](https://github.com/gothinkster/realworld)
 
-This codebase was created to demonstrate a fully fledged fullstack application built with **Express.js + Couchbase + JavaScript** including CRUD operations, authentication, routing, pagination, and more.
+This codebase was created to demonstrate a fully fledged fullstack application built with **Express.js + Couchbase + Typescript** including CRUD operations, authentication, routing, pagination, and more.
 
-We've gone to great lengths to adhere to the **Express.js + Couchbase + typescript** community styleguides & best practices.
+We've gone to great lengths to adhere to the **Express.js + Couchbase + Typescript** community styleguides & best practices.
 
 For more information on how to this works with other frontends/backends, head over to the [RealWorld](https://github.com/gothinkster/realworld) repo.
 
