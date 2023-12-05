@@ -25,5 +25,6 @@ For more information on how to this works with other frontends/backends, head ov
 
 TODO:
 
+- Robust Error handling
 - Only one `access_token_secret` is used for all the accounts registration and login. Drawback: data can be forged if this secret is leaked
 - Usernames are case-sensitive
