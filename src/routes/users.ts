@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import * as couchbase from "couchbase";
 import bcrypt from "bcryptjs";
 import { v4 } from "uuid";
-import { main } from "../app.js";
+// import { main } from "../app.js";
 import bodyParser from "body-parser";
 import verifyJWT from "../verifyJWT.js";
 import jwt from "jsonwebtoken";
@@ -20,7 +20,7 @@ import {
   favoritesCollection,
   tagsCollection,
   couchbaseConnection,
-} from "../db/plug.ts";
+} from "../db/connectCapella.ts";
 
 const SECRET = process.env.SECRET || "Mys3cr3tk3y";
 const router = express.Router({ mergeParams: true });
@@ -54,7 +54,7 @@ router
     await usersCollection
       .upsert(userId, users)
       .then(async (result: any) => {
-        let getResult = { user: await usersCollection.get(userId) };
+        const getResult = { user: await usersCollection.get(userId) };
 
         const myUserObject = getResult.user.content;
 
@@ -95,9 +95,9 @@ router
         `SELECT * FROM \`users\` WHERE email='${req.body.user.email}';`,
         {},
       );
-    let idResult2 = idResult.rows[0].users.id;
+    const idResult2 = idResult.rows[0].users.id;
 
-    let passwordResult = idResult.rows[0].users.password;
+    const passwordResult = idResult.rows[0].users.password;
 
     const users: Users = {
       username: "",
@@ -112,13 +112,13 @@ router
     await usersCollection
       .replace(users.id, users)
       .then(async (result: any) => {
-        let loggedInUserResult = { user: await usersCollection.get(users.id) };
+        const loggedInUserResult = { user: await usersCollection.get(users.id) };
 
         const myUserObject = loggedInUserResult.user.content;
 
         const { user } = req.body;
 
-        let loginUser = async function queryNamed() {
+        const loginUser = async function queryNamed() {
           const queryResult = await bucket
             .scope("blog")
             .query(
@@ -135,7 +135,7 @@ router
               .status(404)
               .json({ errors: { message: "User Not Found" } });
           }
-          let loggedInUserPassword = res2["rows"][0].users.password;
+          const loggedInUserPassword = res2["rows"][0].users.password;
 
           res2["rows"].forEach(
             async (row: { loggedInUserPassword: string }) => {

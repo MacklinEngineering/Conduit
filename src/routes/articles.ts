@@ -1,23 +1,11 @@
 import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
-import * as couchbase from "couchbase";
 import verifyJWTOptional from "../verifyJWTOptional.js";
 import verifyJWT from "../verifyJWT.js";
 import {
-  clusterConnStr,
-  capellaUsername,
-  capellaPassword,
-  bucketName,
-  cluster,
   bucket,
-  usersCollection,
-  profilesCollection,
   articlesCollection,
-  commentsCollection,
-  favoritesCollection,
-  tagsCollection,
-  couchbaseConnection,
-} from "../db/plug.ts";
+} from "../db/connectCapella.ts";
 
 const router = express.Router();
 export interface Users {
@@ -54,7 +42,7 @@ export interface Author {
   following: boolean;
 }
 
-export let tagsMegaList: string[] = [];
+export const tagsMegaList: string[] = [];
 
 router
   .route("")
@@ -64,22 +52,22 @@ router
     async (req: Request, res: Response) => {
       const author = req.query.author;
 
-      let limit = 20;
-      let offset = 0;
-      let query = {};
+      const limit = 20;
+      const offset = 0;
+      const query = {};
       if (req.query.limit) {
-        let limit = req.query.limit;
+        const limit = req.query.limit;
       }
 
       if (req.query.offset) {
-        let offset = req.query.offset;
+        const offset = req.query.offset;
       }
 
       const userQuery = await bucket
         .scope("blog")
         .query(`SELECT * FROM \`articles\`;`, {});
 
-      let newArticles: Article[] = [];
+      const newArticles: Article[] = [];
       userQuery.rows.forEach((row) => {
         newArticles.push(row.articles);
       });
@@ -101,11 +89,11 @@ router
       .scope("blog")
       .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {});
 
-    let databaseUser = userQuery["rows"][0].users;
-    let slug = req.body.article.title.replace(/ /g, "-");
-    let date = new Date().toISOString();
-    let favorited = false;
-    let favoritedCount = 0;
+    const databaseUser = userQuery["rows"][0].users;
+    const slug = req.body.article.title.replace(/ /g, "-");
+    const date = new Date().toISOString();
+    const favorited = false;
+    const favoritedCount = 0;
 
     req.body.article.tagList.forEach((item) => {
       tagsMegaList.push(item);
@@ -128,11 +116,11 @@ router
         following: false,
       },
     };
-
+    
     const getResult = await articlesCollection
       .upsert(databaseUser.id, article)
       .then(async (result: any) => {
-        let articleResult = {
+        const articleResult = {
           article: await articlesCollection.get(databaseUser.id),
         };
 
@@ -154,7 +142,7 @@ router
       .query(`SELECT * FROM \`profiles\``, {});
 
     //Establish a usernames array to do the query
-    let userNames: string[] = [];
+    const userNames: string[] = [];
     profilesQuery.rows.forEach((row) => {
       if (row.profiles.following) userNames.push(row.profiles.username);
     });
@@ -164,12 +152,12 @@ router
       .query(`SELECT * FROM \`articles\`;`, {});
 
     //Delete extra articles key on object
-    let newArticles: Article[] = [];
+    const newArticles: Article[] = [];
     articlesQuery.rows.forEach((row) => {
       newArticles.push(row.articles);
     });
 
-    let filteredArticles = newArticles.filter((document) =>
+    const filteredArticles = newArticles.filter((document) =>
       userNames.includes(document.author.username),
     );
 
@@ -187,13 +175,13 @@ router
     bodyParser.json(),
     verifyJWTOptional,
     async (req: Request, res: Response) => {
-      var slug = req.params["slug"];
+      const slug = req.params["slug"];
 
       const articlesQuery = await bucket
         .scope("blog") //turn into template literal
         .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {});
 
-      let singleArticleFromQuery = articlesQuery.rows[0].articles;
+      const singleArticleFromQuery = articlesQuery.rows[0].articles;
       return res.status(200).json({ article: singleArticleFromQuery });
     },
   );
@@ -202,20 +190,20 @@ router
   .route("/:slug")
   .put(bodyParser.json(), verifyJWT, async (req: Request, res: Response) => {
     const token = req.header("authorization")?.replace("Token ", "");
-    var slug = req.params["slug"];
+    const slug = req.params["slug"];
 
     const userQuery = await bucket
       .scope("blog")
       .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {});
 
-    let databaseUser = userQuery.rows[0].users;
+    const databaseUser = userQuery.rows[0].users;
 
     const articlesQuery = await bucket
       .scope("blog")
       .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {});
 
-    let databaseArticle = articlesQuery.rows[0].articles;
-    let inputData = req.body.article;
+    const databaseArticle = articlesQuery.rows[0].articles;
+    const inputData = req.body.article;
 
     //Loop through the User request body and update the document object for each key inputted
     Object.keys(inputData).forEach((key) => {
@@ -225,7 +213,7 @@ router
     const getResult = await articlesCollection
       .replace(databaseUser.id, databaseArticle)
       .then(async (result: any) => {
-        let updateArticleResult = {
+        const updateArticleResult = {
           article: await articlesCollection.get(databaseUser.id),
         };
 
@@ -244,19 +232,19 @@ router
   .route("/:slug")
   .delete(bodyParser.json(), verifyJWT, async (req: Request, res: Response) => {
     const token = req.header("authorization")?.replace("Token ", "");
-    var slug = req.params["slug"];
+    const slug = req.params["slug"];
 
     const userQuery = await bucket
       .scope("blog")
       .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {});
 
-    let databaseUser = userQuery.rows[0].users;
+    const databaseUser = userQuery.rows[0].users;
 
     const articlesQuery = await bucket
       .scope("blog") //turn into template literal
       .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {});
 
-    let databaseArticle = articlesQuery.rows[0].articles;
+    const databaseArticle = articlesQuery.rows[0].articles;
     const getResult = await articlesCollection
       .remove(databaseUser.id, databaseArticle) //rewrites the entire document, have to learn how "mutateIn" method works for optimization
       .then((result: any) => {

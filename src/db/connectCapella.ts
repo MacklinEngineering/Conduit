@@ -24,10 +24,9 @@ export const commentsCollection = bucket.scope("blog").collection("comments");
 export const favoritesCollection = bucket.scope("blog").collection("favorites");
 export const tagsCollection = bucket.scope("blog").collection("tags");
 
-export let couchbaseConnection = {
+export const couchbaseConnection = {
   cluster,
   bucket,
-  // collection,
   usersCollection,
   profilesCollection,
   articlesCollection,

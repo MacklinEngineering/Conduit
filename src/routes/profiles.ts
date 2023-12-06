@@ -4,20 +4,9 @@ import verifyJWTOptional from "../verifyJWTOptional.js";
 import * as couchbase from "couchbase";
 import verifyJWT from "../verifyJWT.js";
 import {
-  clusterConnStr,
-  capellaUsername,
-  capellaPassword,
-  bucketName,
-  cluster,
   bucket,
-  usersCollection,
   profilesCollection,
-  articlesCollection,
-  commentsCollection,
-  favoritesCollection,
-  tagsCollection,
-  couchbaseConnection,
-} from "../db/plug.ts";
+} from "../db/connectCapella.ts";
 
 const router = express.Router({ mergeParams: true });
 export interface Users {
@@ -43,7 +32,7 @@ router
     verifyJWTOptional,
     bodyParser.json(),
     async (req: Request, res: Response) => {
-      var username = req.params["username"];
+      const username = req.params["username"];
 
       const userQuery = await bucket
         .scope("blog") //turn into template literal
@@ -51,8 +40,8 @@ router
 
       userQuery.rows.forEach((row) => {});
 
-      let databaseUser = userQuery.rows[0].users;
-      let following = false;
+      const databaseUser = userQuery.rows[0].users;
+      const following = false;
 
       const profiles: Profile = {
         username: username,
@@ -64,7 +53,7 @@ router
       await profilesCollection
         .upsert(databaseUser.id, profiles)
         .then(async (result: any) => {
-          let getResult = {
+          const getResult = {
             profile: await profilesCollection.get(databaseUser.id),
           };
 
@@ -83,7 +72,7 @@ router
 router
   .route("/follow") // /users
   .post(bodyParser.json(), verifyJWT, async (req: Request, res: Response) => {
-    var username = req.params["username"];
+    const username = req.params["username"];
 
     const userQuery = await bucket
       .scope("blog") //turn into template literal
@@ -91,9 +80,9 @@ router
 
     userQuery.rows.forEach((row) => {});
 
-    let databaseUser = userQuery.rows[0].users;
+    const databaseUser = userQuery.rows[0].users;
 
-    let following = true;
+    const following = true;
 
     const profiles: Profile = {
       username: username,
@@ -105,7 +94,7 @@ router
     await profilesCollection
       .upsert(databaseUser.id, profiles)
       .then(async (result: any) => {
-        let getResult = {
+        const getResult = {
           profile: await profilesCollection.get(databaseUser.id),
         };
 
@@ -123,7 +112,7 @@ router
 router
   .route("/follow")
   .delete(bodyParser.json(), verifyJWT, async (req: Request, res: Response) => {
-    var username = req.params["username"];
+    const username = req.params["username"];
 
     const userQuery = await bucket
       .scope("blog")
@@ -131,9 +120,9 @@ router
 
     userQuery.rows.forEach((row) => {});
 
-    let databaseUser = userQuery.rows[0].users;
+    const databaseUser = userQuery.rows[0].users;
 
-    let following = false;
+    const following = false;
 
     const profiles: Profile = {
       username: username,
@@ -145,7 +134,7 @@ router
     await profilesCollection
       .upsert(databaseUser.id, profiles)
       .then(async (result: any) => {
-        let getResult = {
+        const getResult = {
           profile: await profilesCollection.get(databaseUser.id),
         };
 

@@ -16,7 +16,7 @@ import {
   favoritesCollection,
   tagsCollection,
   couchbaseConnection,
-} from "../db/plug.ts";
+} from "../db/connectCapella.ts";
 
 const router = express.Router({ mergeParams: true });
 export interface Users {
@@ -33,10 +33,12 @@ router.route("").get(bodyParser.json(), async (req: Request, res: Response) => {
   const articlesQuery = await bucket
     .scope("blog")
     .query(`SELECT * FROM \`articles\` WHERE tagList!='';`, {});
-
+console.log("LIST", tagsMegaList)
   articlesQuery["rows"].forEach((row) =>
     tagsMegaList.push(row.articles.tagList),
+    console.log(articlesQuery["rows"]),
   );
+  console.log("TAG LIST", tagsMegaList)
 
   return res.status(200).json({ tags: tagsMegaList });
 });

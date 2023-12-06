@@ -4,20 +4,9 @@ import * as couchbase from "couchbase";
 import verifyJWT from "../verifyJWT.js";
 import { Profile } from "./profiles.js";
 import {
-  clusterConnStr,
-  capellaUsername,
-  capellaPassword,
-  bucketName,
-  cluster,
   bucket,
-  usersCollection,
-  profilesCollection,
-  articlesCollection,
   commentsCollection,
-  favoritesCollection,
-  tagsCollection,
-  couchbaseConnection,
-} from "../db/plug.ts";
+} from "../db/connectCapella.ts";
 
 export interface Users {
   username: string;
@@ -43,25 +32,25 @@ router
   .route("")
   .post(bodyParser.json(), verifyJWT, async (req: Request, res: Response) => {
     const token = req.header("authorization")?.replace("Token ", "");
-    var slug = req.params["slug"];
+    const slug = req.params["slug"];
 
-    let requestCommentBody = req.body.comment.body;
+    const requestCommentBody = req.body.comment.body;
 
     const commentId = Math.random(); //TODO everytime this is called +1
-    let date = new Date().toISOString();
+    const date = new Date().toISOString();
 
     const userQuery = await bucket
       .scope("blog")
       .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {});
 
     userQuery.rows.forEach((row) => {});
-    let databaseUser = userQuery["rows"][0].users;
+    const databaseUser = userQuery["rows"][0].users;
 
     const articlesQuery = await bucket
       .scope("blog") //turn into template literal
       .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {});
 
-    let singleArticleFromQuery = articlesQuery.rows[0].articles;
+    const singleArticleFromQuery = articlesQuery.rows[0].articles;
 
     //Search articles list for one with slug
     const comment: Comment = {
@@ -80,7 +69,7 @@ router
     const getResult = await commentsCollection
       .upsert(databaseUser.id, comment)
       .then(async (result: any) => {
-        let commentResult = {
+        const commentResult = {
           comment: await commentsCollection.get(databaseUser.id),
         };
 
@@ -95,12 +84,12 @@ router
   });
 
 router.route("").get(bodyParser.json(), async (req: Request, res: Response) => {
-  var slug = req.params["slug"];
+  const slug = req.params["slug"];
 
   const commentsQuery = await bucket
     .scope("blog")
     .query(`SELECT * FROM \`comments\`;`, {});
-  let commentsList: Comment[] = [];
+  const commentsList: Comment[] = [];
   commentsQuery.rows.forEach((row) => {
     commentsList.push(row.comments);
   });
@@ -111,27 +100,27 @@ router
   .route("")
   .delete(bodyParser.json(), verifyJWT, async (req: Request, res: Response) => {
     const token = req.header("authorization")?.replace("Token ", "");
-    var slug = req.params["slug"];
-    let commentId = req.params["id"];
-    let requestCommentBody = req.body.comment.body;
+    const slug = req.params["slug"];
+    const commentId = req.params["id"];
+    const requestCommentBody = req.body.comment.body;
 
     const userQuery = await bucket
       .scope("blog")
       .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {});
 
     userQuery.rows.forEach((row) => {});
-    let databaseUser = userQuery["rows"][0].users;
+    const databaseUser = userQuery["rows"][0].users;
 
     const commentsQuery = await bucket
       .scope("blog") //turn into template literal
       .query(`SELECT * FROM \`comments\` WHERE id='${commentId}';`, {});
 
-    let singleCommentFromQuery = commentsQuery.rows[0].articles;
+    const singleCommentFromQuery = commentsQuery.rows[0].articles;
 
     const getResult = await commentsCollection
       .remove(databaseUser.id, singleCommentFromQuery)
       .then(async (result: any) => {
-        let commentResult = {
+        const commentResult = {
           comment: await commentsCollection.get(databaseUser.id),
         };
         const myComment = commentResult.comment.content;

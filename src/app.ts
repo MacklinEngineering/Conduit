@@ -11,7 +11,7 @@ import profiles from "./routes/profiles.js";
 import tags from "./routes/tags.js";
 import comments from "./routes/comments.js";
 import favorites from "./routes/favorites.js";
-import { connectCapella } from "./db/connect_to_capella.ts";
+// import { connectCapella } from "./db/connect_to_capella.ts";
 import {
   clusterConnStr,
   capellaUsername,
@@ -25,7 +25,11 @@ import {
   favoritesCollection,
   tagsCollection,
   couchbaseConnection,
-} from "./db/plug.ts";
+} from "./db/connectCapella.ts";
+process.on('unhandledRejection', (reason, p) => {
+    console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+    // application specific logging, throwing an error, or other logic here
+  });
 console.log("in app.ts");
 
 export const app = express();
@@ -63,11 +67,16 @@ if (!CB_BUCKET) {
     "Please define the CB_BUCKET environment variable inside dev.env",
   );
 }
-const swaggerDocument = YAML.load("./swagger.yaml");
+try{
+    const swaggerDocument = YAML.load("./swagger.yaml");
+    app.use("/swagger-ui", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+}catch(err){
+    console.log(err)
+}
 const SECRET = process.env.SECRET || "Mys3cr3tk3y";
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/swagger-ui", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.get("/", (req: Request, res: Response) => {
   res.send(
     '<body onload="window.location = \'/swagger-ui/\'"><a href="/swagger-ui/">Click here to see the API</a>',
@@ -90,8 +99,10 @@ export async function createAllPrimaryIndexes() {
   const profileBucketIndex = `CREATE PRIMARY INDEX ON Conduit1.blog.profiles`;
   const articleBucketIndex = `CREATE PRIMARY INDEX ON Conduit1.blog.articles`;
   const commentBucketIndex = `CREATE PRIMARY INDEX ON Conduit1.blog.comments`;
+  console.log("MAYBE 1")
   try {
     await cluster.query(userBucketIndex);
+    console.log("MAYBE 2")
   } catch (err) {
     if (err instanceof couchbase.IndexExistsError) {
       console.info("Users Bucket Index Creation: Index Already Exists");
@@ -128,27 +139,35 @@ export async function createAllPrimaryIndexes() {
     }
   }
 }
-createAllPrimaryIndexes();
+await createAllPrimaryIndexes();
+console.log("In APP")
 
 app.get("/user", verifyJWT, async (req: Request, res: Response) => {
   const token = req.header("authorization")?.replace("Token ", "");
   const queryResult = await bucket
     .scope("blog")
-    .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {});
+    .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {})
+    .catch((err)=> {
+            console.log(err)
+        })
 
   const userId = queryResult["rows"][0].users.id;
-  let getResult = { user: await usersCollection.get(userId) };
+  let getResult = { user: await usersCollection.get(userId)};
 
   const myUserObject = getResult.user.content;
   return res.status(201).json({ user: myUserObject });
 });
+
 app.put("/user", verifyJWT, async (req: Request, res: Response) => {
   const token = req.header("authorization")?.replace("Token ", "");
   const userQuery = await bucket
     .scope("blog") //turn into template literal
-    .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {});
+    .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {})
+    .catch((err)=> {
+        console.log(err)
+    })
 
-  let databaseUser = userQuery.rows[0].users;
+  let databaseUser = userQuery["rows"][0].users;
   let inputData = req.body.user;
 
   //Loop through the User request body and update the document object for each key inputted
@@ -172,15 +191,6 @@ app.put("/user", verifyJWT, async (req: Request, res: Response) => {
         message: `User Insert Failed: ${e.message}`,
       });
     });
-});
-
-export const main = async () => {
-  connectCapella();
-};
-// Run the main function
-main().catch((err) => {
-  console.log("ERR:", err);
-  process.exit(1);
 });
 
 const port = parseInt(process.env.APP_PORT || "") || 3002;
