@@ -1,6 +1,5 @@
 import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
-import * as couchbase from "couchbase";
 import verifyJWT from "../verifyJWT.js";
 import {
   bucket,
@@ -31,7 +30,7 @@ router
     const databaseUser = userQuery.rows[0].users;
 
     const articlesQuery = await bucket
-      .scope("blog") //turn into template literal
+      .scope("blog") 
       .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {});
 
     const databaseArticle = articlesQuery.rows[0].articles;
@@ -43,7 +42,7 @@ router
         ...databaseArticle,
         favoritesCount,
         favorited,
-      }) //rewrites the entire document, have to learn how "mutateIn" method works for optimization
+      }) 
       .then(async (result: any) => {
         const updateArticleResult = {
           article: await articlesCollection.get(databaseUser.id),
@@ -66,13 +65,13 @@ router
     const slug = req.params["slug"];
 
     const userQuery = await bucket
-      .scope("blog") //turn into template literal
+      .scope("blog") 
       .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {});
 
     const databaseUser = userQuery.rows[0].users;
 
     const articlesQuery = await bucket
-      .scope("blog") //turn into template literal
+      .scope("blog")
       .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {});
 
     const databaseArticle = articlesQuery.rows[0].articles;
@@ -84,7 +83,7 @@ router
         ...databaseArticle,
         favoritesCount,
         favorited,
-      }) //rewrites the entire document, have to learn how "mutateIn" method works for optimization
+      }) 
       .then(async (result: any) => {
         const updateArticleResult = {
           article: await articlesCollection.get(databaseUser.id),

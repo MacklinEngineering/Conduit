@@ -1,25 +1,11 @@
 import express, { Request, Response } from "express";
-import * as couchbase from "couchbase";
 import bcrypt from "bcryptjs";
 import { v4 } from "uuid";
-// import { main } from "../app.js";
 import bodyParser from "body-parser";
-import verifyJWT from "../verifyJWT.js";
 import jwt from "jsonwebtoken";
 import {
-  clusterConnStr,
-  capellaUsername,
-  capellaPassword,
-  bucketName,
-  cluster,
   bucket,
   usersCollection,
-  profilesCollection,
-  articlesCollection,
-  commentsCollection,
-  favoritesCollection,
-  tagsCollection,
-  couchbaseConnection,
 } from "../db/connectCapella.ts";
 
 const SECRET = process.env.SECRET || "Mys3cr3tk3y";

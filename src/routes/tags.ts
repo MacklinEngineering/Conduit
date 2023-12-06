@@ -1,21 +1,8 @@
 import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
-import { tagsMegaList, Article } from "./articles.js";
-import * as couchbase from "couchbase";
+import { tagsMegaList } from "./articles.js";
 import {
-  clusterConnStr,
-  capellaUsername,
-  capellaPassword,
-  bucketName,
-  cluster,
   bucket,
-  usersCollection,
-  profilesCollection,
-  articlesCollection,
-  commentsCollection,
-  favoritesCollection,
-  tagsCollection,
-  couchbaseConnection,
 } from "../db/connectCapella.ts";
 
 const router = express.Router({ mergeParams: true });

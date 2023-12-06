@@ -11,26 +11,16 @@ import profiles from "./routes/profiles.js";
 import tags from "./routes/tags.js";
 import comments from "./routes/comments.js";
 import favorites from "./routes/favorites.js";
-// import { connectCapella } from "./db/connect_to_capella.ts";
 import {
-  clusterConnStr,
-  capellaUsername,
-  bucketName,
   cluster,
   bucket,
   usersCollection,
-  profilesCollection,
-  articlesCollection,
-  commentsCollection,
-  favoritesCollection,
-  tagsCollection,
-  couchbaseConnection,
 } from "./db/connectCapella.ts";
+
+//Error handling
 process.on('unhandledRejection', (reason, p) => {
     console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
-    // application specific logging, throwing an error, or other logic here
   });
-console.log("in app.ts");
 
 export const app = express();
 app.use(cors(corsOptions));
@@ -44,6 +34,7 @@ const CB_USER = process.env.CB_USER;
 const CB_PASS = process.env.CB_PASS;
 const CB_URL = process.env.CB_URL;
 const CB_BUCKET = process.env.CB_BUCKET;
+
 if (!CB_USER) {
   throw new Error(
     "Please define the CB_USER environment variable inside dev.env",
@@ -140,7 +131,6 @@ export async function createAllPrimaryIndexes() {
   }
 }
 await createAllPrimaryIndexes();
-console.log("In APP")
 
 app.get("/user", verifyJWT, async (req: Request, res: Response) => {
   const token = req.header("authorization")?.replace("Token ", "");

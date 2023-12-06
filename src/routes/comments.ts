@@ -1,6 +1,5 @@
 import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
-import * as couchbase from "couchbase";
 import verifyJWT from "../verifyJWT.js";
 import { Profile } from "./profiles.js";
 import {
@@ -36,7 +35,7 @@ router
 
     const requestCommentBody = req.body.comment.body;
 
-    const commentId = Math.random(); //TODO everytime this is called +1
+    const commentId = Math.random(); 
     const date = new Date().toISOString();
 
     const userQuery = await bucket
@@ -47,12 +46,11 @@ router
     const databaseUser = userQuery["rows"][0].users;
 
     const articlesQuery = await bucket
-      .scope("blog") //turn into template literal
+      .scope("blog") 
       .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {});
 
     const singleArticleFromQuery = articlesQuery.rows[0].articles;
 
-    //Search articles list for one with slug
     const comment: Comment = {
       id: commentId,
       createdAt: date,
@@ -112,7 +110,7 @@ router
     const databaseUser = userQuery["rows"][0].users;
 
     const commentsQuery = await bucket
-      .scope("blog") //turn into template literal
+      .scope("blog") 
       .query(`SELECT * FROM \`comments\` WHERE id='${commentId}';`, {});
 
     const singleCommentFromQuery = commentsQuery.rows[0].articles;

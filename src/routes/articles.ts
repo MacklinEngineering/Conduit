@@ -178,7 +178,7 @@ router
       const slug = req.params["slug"];
 
       const articlesQuery = await bucket
-        .scope("blog") //turn into template literal
+        .scope("blog") 
         .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {});
 
       const singleArticleFromQuery = articlesQuery.rows[0].articles;
@@ -246,7 +246,7 @@ router
 
     const databaseArticle = articlesQuery.rows[0].articles;
     const getResult = await articlesCollection
-      .remove(databaseUser.id, databaseArticle) //rewrites the entire document, have to learn how "mutateIn" method works for optimization
+      .remove(databaseUser.id, databaseArticle)
       .then((result: any) => {
         return res.status(200).json({ article: databaseArticle });
       })

@@ -1,7 +1,6 @@
 import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
 import verifyJWTOptional from "../verifyJWTOptional.js";
-import * as couchbase from "couchbase";
 import verifyJWT from "../verifyJWT.js";
 import {
   bucket,
@@ -27,7 +26,7 @@ export interface Profile {
 }
 
 router
-  .route("") // /profiles/:username
+  .route("")
   .get(
     verifyJWTOptional,
     bodyParser.json(),
@@ -35,7 +34,7 @@ router
       const username = req.params["username"];
 
       const userQuery = await bucket
-        .scope("blog") //turn into template literal
+        .scope("blog")
         .query(`SELECT * FROM \`users\` WHERE username='${username}';`, {});
 
       userQuery.rows.forEach((row) => {});
@@ -70,12 +69,12 @@ router
   );
 
 router
-  .route("/follow") // /users
+  .route("/follow")
   .post(bodyParser.json(), verifyJWT, async (req: Request, res: Response) => {
     const username = req.params["username"];
 
     const userQuery = await bucket
-      .scope("blog") //turn into template literal
+      .scope("blog")
       .query(`SELECT * FROM \`users\` WHERE username='${username}';`, {});
 
     userQuery.rows.forEach((row) => {});
