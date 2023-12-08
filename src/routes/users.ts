@@ -3,10 +3,7 @@ import bcrypt from "bcryptjs";
 import { v4 } from "uuid";
 import bodyParser from "body-parser";
 import jwt from "jsonwebtoken";
-import {
-  bucket,
-  usersCollection,
-} from "../db/connectCapella.ts";
+import { bucket, usersCollection } from "../db/connectCapella.ts";
 
 const SECRET = process.env.SECRET || "Mys3cr3tk3y";
 const router = express.Router({ mergeParams: true });
@@ -107,7 +104,6 @@ router
     await usersCollection
       .replace(users.id, users)
       .then(async (result: any) => {
-
         const loginUser = async function queryNamed() {
           const queryResult = await bucket
             .scope("blog")
@@ -134,11 +130,9 @@ router
                 loggedInUserPassword,
               );
               if (!match) {
-                return res
-                  .status(401)
-                  .json({
-                    errors: { message: "Unauthorized: Wrong password" },
-                  });
+                return res.status(401).json({
+                  errors: { message: "Unauthorized: Wrong password" },
+                });
               } else {
                 const headers = {
                   headers: { Authorization: "Token " + users.token },

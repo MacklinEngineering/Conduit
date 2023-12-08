@@ -1,10 +1,7 @@
 import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
 import verifyJWT from "../verifyJWT.js";
-import {
-  bucket,
-  articlesCollection,
-} from "../db/connectCapella.ts";
+import { bucket, articlesCollection } from "../db/connectCapella.ts";
 
 const router = express.Router({ mergeParams: true });
 export interface Users {
@@ -38,7 +35,7 @@ router
     const databaseUser = userQuery.rows[0].users;
 
     const articlesQuery = await bucket
-      .scope("blog") 
+      .scope("blog")
       .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {});
 
     const databaseArticle = articlesQuery.rows[0].articles;
@@ -50,7 +47,7 @@ router
         ...databaseArticle,
         favoritesCount,
         favorited,
-      }) 
+      })
       .then(async (result: any) => {
         const updateArticleResult = {
           article: await articlesCollection.get(databaseUser.id),
@@ -81,7 +78,7 @@ router
     const slug = req.params["slug"];
 
     const userQuery = await bucket
-      .scope("blog") 
+      .scope("blog")
       .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {});
 
     const databaseUser = userQuery.rows[0].users;
@@ -99,7 +96,7 @@ router
         ...databaseArticle,
         favoritesCount,
         favorited,
-      }) 
+      })
       .then(async (result: any) => {
         const updateArticleResult = {
           article: await articlesCollection.get(databaseUser.id),

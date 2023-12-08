@@ -11,15 +11,11 @@ import profiles from "./routes/profiles.js";
 import tags from "./routes/tags.js";
 import comments from "./routes/comments.js";
 import favorites from "./routes/favorites.js";
-import {
-  cluster,
-  bucket,
-  usersCollection,
-} from "./db/connectCapella.ts";
+import { cluster, bucket, usersCollection } from "./db/connectCapella.ts";
 
 //Error handling
-process.on('unhandledRejection', (reason, p) => {
-    console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+process.on("unhandledRejection", (reason, p) => {
+  console.log("Unhandled Rejection at: Promise", p, "reason:", reason);
 });
 
 export const app = express();
@@ -59,12 +55,11 @@ if (!CB_BUCKET) {
     "Please define the CB_BUCKET environment variable inside dev.env",
   );
 }
-try{
-    const swaggerDocument = YAML.load("./swagger.yaml");
-    app.use("/swagger-ui", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-}catch(err){
-    console.log(err)
+try {
+  const swaggerDocument = YAML.load("./swagger.yaml");
+  app.use("/swagger-ui", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+} catch (err) {
+  console.log(err);
 }
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -79,7 +74,7 @@ export async function createAllPrimaryIndexes() {
   const profileBucketIndex = `CREATE PRIMARY INDEX ON Conduit1.blog.profiles`;
   const articleBucketIndex = `CREATE PRIMARY INDEX ON Conduit1.blog.articles`;
   const commentBucketIndex = `CREATE PRIMARY INDEX ON Conduit1.blog.comments`;
-  
+
   try {
     await cluster.query(userBucketIndex);
   } catch (err) {
@@ -131,10 +126,10 @@ app.get("/user", verifyJWT, async (req: Request, res: Response) => {
   const token = req.header("authorization")?.replace("Token ", "");
   const queryResult = await bucket
     .scope("blog")
-    .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {})
+    .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {});
 
   const userId = queryResult["rows"][0].users.id;
-  let getResult = { user: await usersCollection.get(userId)};
+  let getResult = { user: await usersCollection.get(userId) };
 
   const myUserObject = getResult.user.content;
   return res.status(201).json({ user: myUserObject });
@@ -151,7 +146,7 @@ app.put("/user", verifyJWT, async (req: Request, res: Response) => {
   const token = req.header("authorization")?.replace("Token ", "");
   const userQuery = await bucket
     .scope("blog")
-    .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {})
+    .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {});
 
   let databaseUser = userQuery["rows"][0].users;
   let inputData = req.body.user;

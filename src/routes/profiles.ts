@@ -2,10 +2,7 @@ import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
 import verifyJWTOptional from "../verifyJWTOptional.js";
 import verifyJWT from "../verifyJWT.js";
-import {
-  bucket,
-  profilesCollection,
-} from "../db/connectCapella.ts";
+import { bucket, profilesCollection } from "../db/connectCapella.ts";
 
 const router = express.Router({ mergeParams: true });
 export interface Users {

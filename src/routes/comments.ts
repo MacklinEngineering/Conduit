@@ -2,10 +2,7 @@ import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
 import verifyJWT from "../verifyJWT.js";
 import { Profile } from "./profiles.js";
-import {
-  bucket,
-  commentsCollection,
-} from "../db/connectCapella.ts";
+import { bucket, commentsCollection } from "../db/connectCapella.ts";
 
 export interface Users {
   username: string;
@@ -43,7 +40,7 @@ router
 
     const requestCommentBody = req.body.comment.body;
 
-    const commentId = Math.random(); 
+    const commentId = Math.random();
     const date = new Date().toISOString();
 
     const userQuery = await bucket
@@ -54,7 +51,7 @@ router
     const databaseUser = userQuery["rows"][0].users;
 
     const articlesQuery = await bucket
-      .scope("blog") 
+      .scope("blog")
       .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {});
 
     const singleArticleFromQuery = articlesQuery.rows[0].articles;
@@ -97,10 +94,7 @@ router
  Response: returns a list of comments
 ****/
 
-router
-    .route("")
-    .get(bodyParser.json(), async (req: Request, res: Response) => {
-
+router.route("").get(bodyParser.json(), async (req: Request, res: Response) => {
   const commentsQuery = await bucket
     .scope("blog")
     .query(`SELECT * FROM \`comments\`;`, {});
@@ -133,7 +127,7 @@ router
     const databaseUser = userQuery["rows"][0].users;
 
     const commentsQuery = await bucket
-      .scope("blog") 
+      .scope("blog")
       .query(`SELECT * FROM \`comments\` WHERE id='${commentId}';`, {});
 
     const singleCommentFromQuery = commentsQuery.rows[0].articles;

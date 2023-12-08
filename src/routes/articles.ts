@@ -2,10 +2,7 @@ import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
 import verifyJWTOptional from "../verifyJWTOptional.js";
 import verifyJWT from "../verifyJWT.js";
-import {
-  bucket,
-  articlesCollection,
-} from "../db/connectCapella.ts";
+import { bucket, articlesCollection } from "../db/connectCapella.ts";
 
 const router = express.Router();
 export interface Users {
@@ -130,7 +127,7 @@ router
         following: false,
       },
     };
-    
+
     await articlesCollection
       .upsert(databaseUser.id, article)
       .then(async (result: any) => {
@@ -182,12 +179,10 @@ router
       userNames.includes(document.author.username),
     );
 
-    return res
-      .status(200)
-      .json({
-        articles: filteredArticles,
-        articlesCount: filteredArticles.length,
-      });
+    return res.status(200).json({
+      articles: filteredArticles,
+      articlesCount: filteredArticles.length,
+    });
   });
 
 /**** 
@@ -207,7 +202,7 @@ router
       const slug = req.params["slug"];
 
       const articlesQuery = await bucket
-        .scope("blog") 
+        .scope("blog")
         .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {});
 
       const singleArticleFromQuery = articlesQuery.rows[0].articles;
