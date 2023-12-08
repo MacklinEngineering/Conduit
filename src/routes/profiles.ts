@@ -25,6 +25,14 @@ export interface Profile {
   following: boolean;
 }
 
+/**** 
+ Description: Gets a profile 
+ Route: /api/profiles/{username}
+ Auth: OPTIONAL
+ Required fields: username
+ Response: returns a profile
+****/
+
 router
   .route("")
   .get(
@@ -68,6 +76,14 @@ router
     },
   );
 
+/**** 
+ Description: Follows a profile 
+ Route: /api/profiles/{username}/follow
+ Auth: YES
+ Required fields: username
+ Response: returns a profile
+****/
+
 router
   .route("/follow")
   .post(bodyParser.json(), verifyJWT, async (req: Request, res: Response) => {
@@ -107,6 +123,14 @@ router
         });
       });
   });
+
+/**** 
+ Description: Unfollows a profile 
+ Route: /api/profiles/{username}/follow
+ Auth: YES
+ Required fields: username
+ Response: returns a profile
+****/
 
 router
   .route("/follow")

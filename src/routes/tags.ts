@@ -16,16 +16,20 @@ export interface Users {
   id: string;
 }
 
+/**** 
+ Description: Gets tags for an article
+ Route: /tags
+ Auth: NO
+ Response: returns tags
+****/
+
 router.route("").get(bodyParser.json(), async (req: Request, res: Response) => {
   const articlesQuery = await bucket
     .scope("blog")
     .query(`SELECT * FROM \`articles\` WHERE tagList!='';`, {});
-console.log("LIST", tagsMegaList)
   articlesQuery["rows"].forEach((row) =>
     tagsMegaList.push(row.articles.tagList),
-    console.log(articlesQuery["rows"]),
   );
-  console.log("TAG LIST", tagsMegaList)
 
   return res.status(200).json({ tags: tagsMegaList });
 });

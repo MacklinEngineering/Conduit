@@ -21,6 +21,14 @@ export interface Users {
   id: string;
 }
 
+/**** 
+ Description: Register a new user 
+ Route: /api/users
+ Auth: NO
+ Required fields: Email, password, username
+ Response: returns a user
+****/
+
 router
   .route("")
   .post(bodyParser.json(), async (req: Request, res: Response) => {
@@ -60,6 +68,7 @@ router
  Required fields: Email, password
  Response: returns a user
 ****/
+
 router
   .route("/login")
   .post(bodyParser.json(), async (req: Request, res: Response, getResult) => {
@@ -98,11 +107,6 @@ router
     await usersCollection
       .replace(users.id, users)
       .then(async (result: any) => {
-        const loggedInUserResult = { user: await usersCollection.get(users.id) };
-
-        const myUserObject = loggedInUserResult.user.content;
-
-        const { user } = req.body;
 
         const loginUser = async function queryNamed() {
           const queryResult = await bucket

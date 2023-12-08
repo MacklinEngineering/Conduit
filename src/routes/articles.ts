@@ -44,6 +44,13 @@ export interface Author {
 
 export const tagsMegaList: string[] = [];
 
+/**** 
+ Description: Get articles 
+ Route: /api/articles
+ Auth: OPTIONAL
+ Response: returns articles
+****/
+
 router
   .route("")
   .get(
@@ -81,6 +88,13 @@ router
     },
   );
 
+/**** 
+ Description: Create an article 
+ Route: /api/articles
+ Auth: YES
+ Response: returns an article
+****/
+
 router
   .route("")
   .post(verifyJWT, bodyParser.json(), async (req: Request, res: Response) => {
@@ -117,7 +131,7 @@ router
       },
     };
     
-    const getResult = await articlesCollection
+    await articlesCollection
       .upsert(databaseUser.id, article)
       .then(async (result: any) => {
         const articleResult = {
@@ -133,6 +147,13 @@ router
         });
       });
   });
+
+/**** 
+ Description: Gets articles from users you follow
+ Route: /api/articles/feed
+ Auth: YES
+ Response: returns a list of articles
+****/
 
 router
   .route("/feed")
@@ -169,6 +190,14 @@ router
       });
   });
 
+/**** 
+ Description: Gets an article 
+ Route: /api/articles/{slug}
+ Auth: OPTIONAL
+ Required fields: slug
+ Response: returns the article
+****/
+
 router
   .route("/:slug")
   .get(
@@ -185,6 +214,14 @@ router
       return res.status(200).json({ article: singleArticleFromQuery });
     },
   );
+
+/**** 
+ Description: Updates an article 
+ Route: /api/articles/{slug}
+ Auth: YES
+ Required fields: slug
+ Response: returns the article
+****/
 
 router
   .route("/:slug")
@@ -210,7 +247,7 @@ router
       databaseArticle[key] = inputData[key];
     });
 
-    const getResult = await articlesCollection
+    await articlesCollection
       .replace(databaseUser.id, databaseArticle)
       .then(async (result: any) => {
         const updateArticleResult = {
@@ -228,6 +265,14 @@ router
       });
   });
 
+/**** 
+ Description: Deletes an article 
+ Route: /api/articles/{slug}
+ Auth: YES
+ Required fields: slug
+ Response: returns the article
+****/
+
 router
   .route("/:slug")
   .delete(bodyParser.json(), verifyJWT, async (req: Request, res: Response) => {
@@ -241,11 +286,11 @@ router
     const databaseUser = userQuery.rows[0].users;
 
     const articlesQuery = await bucket
-      .scope("blog") //turn into template literal
+      .scope("blog")
       .query(`SELECT * FROM \`articles\` WHERE slug='${slug}';`, {});
 
     const databaseArticle = articlesQuery.rows[0].articles;
-    const getResult = await articlesCollection
+    await articlesCollection
       .remove(databaseUser.id, databaseArticle)
       .then((result: any) => {
         return res.status(200).json({ article: databaseArticle });

@@ -27,6 +27,14 @@ export interface Comment {
 
 const router = express.Router({ mergeParams: true });
 
+/**** 
+ Description: Create a comment for an article 
+ Route: /api/articles/{slug}/comments
+ Auth: YES
+ Required fields: slug
+ Response: returns the comment
+****/
+
 router
   .route("")
   .post(bodyParser.json(), verifyJWT, async (req: Request, res: Response) => {
@@ -64,7 +72,7 @@ router
       },
     };
 
-    const getResult = await commentsCollection
+    await commentsCollection
       .upsert(databaseUser.id, comment)
       .then(async (result: any) => {
         const commentResult = {
@@ -81,8 +89,17 @@ router
       });
   });
 
-router.route("").get(bodyParser.json(), async (req: Request, res: Response) => {
-  const slug = req.params["slug"];
+/**** 
+ Description: Gets comments for an article 
+ Route: /api/articles/{slug}/comments
+ Auth: YES
+ Required fields: slug
+ Response: returns a list of comments
+****/
+
+router
+    .route("")
+    .get(bodyParser.json(), async (req: Request, res: Response) => {
 
   const commentsQuery = await bucket
     .scope("blog")
@@ -94,13 +111,19 @@ router.route("").get(bodyParser.json(), async (req: Request, res: Response) => {
   return res.status(200).json({ comments: commentsList });
 });
 
+/**** 
+ Description: Delete a comment for an article 
+ Route: articles/{slug}/comments/{id}
+ Auth: YES
+ Required fields: slug, id
+ Response: returns the comment
+****/
+
 router
   .route("")
   .delete(bodyParser.json(), verifyJWT, async (req: Request, res: Response) => {
     const token = req.header("authorization")?.replace("Token ", "");
-    const slug = req.params["slug"];
     const commentId = req.params["id"];
-    const requestCommentBody = req.body.comment.body;
 
     const userQuery = await bucket
       .scope("blog")
@@ -115,7 +138,7 @@ router
 
     const singleCommentFromQuery = commentsQuery.rows[0].articles;
 
-    const getResult = await commentsCollection
+    await commentsCollection
       .remove(databaseUser.id, singleCommentFromQuery)
       .then(async (result: any) => {
         const commentResult = {

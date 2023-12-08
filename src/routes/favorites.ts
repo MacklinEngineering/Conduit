@@ -17,6 +17,14 @@ export interface Users {
   id: string;
 }
 
+/**** 
+ Description: Favorites an article 
+ Route: /api/articles/{slug}/favorite
+ Auth: YES
+ Required fields: slug
+ Response: returns an article
+****/
+
 router
   .route("")
   .post(bodyParser.json(), verifyJWT, async (req: Request, res: Response) => {
@@ -37,7 +45,7 @@ router
     const favoritesCount = databaseArticle.favoritesCount + 1;
     const favorited = true;
 
-    const getResult = await articlesCollection
+    await articlesCollection
       .replace(databaseUser.id, {
         ...databaseArticle,
         favoritesCount,
@@ -57,6 +65,14 @@ router
         });
       });
   });
+
+/**** 
+ Description: Unfavorites an article 
+ Route: /api/articles/{slug}/favorite
+ Auth: YES
+ Required fields: slug
+ Response: returns an article
+****/
 
 router
   .route("")
@@ -78,7 +94,7 @@ router
     const favoritesCount = databaseArticle.favoritesCount - 1;
     const favorited = false;
 
-    const getResult = await articlesCollection
+    await articlesCollection
       .replace(databaseUser.id, {
         ...databaseArticle,
         favoritesCount,

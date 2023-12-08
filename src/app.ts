@@ -20,7 +20,7 @@ import {
 //Error handling
 process.on('unhandledRejection', (reason, p) => {
     console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
-  });
+});
 
 export const app = express();
 app.use(cors(corsOptions));
@@ -30,6 +30,7 @@ app.use("/profiles/:username", profiles);
 app.use("/tags", tags);
 app.use("/articles/:slug/comments", comments);
 app.use("/articles/:slug/favorite", favorites);
+
 const CB_USER = process.env.CB_USER;
 const CB_PASS = process.env.CB_PASS;
 const CB_URL = process.env.CB_URL;
@@ -65,7 +66,6 @@ try{
 }catch(err){
     console.log(err)
 }
-const SECRET = process.env.SECRET || "Mys3cr3tk3y";
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.get("/", (req: Request, res: Response) => {
@@ -73,27 +73,15 @@ app.get("/", (req: Request, res: Response) => {
     '<body onload="window.location = \'/swagger-ui/\'"><a href="/swagger-ui/">Click here to see the API</a>',
   );
 });
-interface Users {
-  username: string;
-  email: string;
-  password: string;
-  bio: string;
-  image: string;
-  token: string;
-  id: string;
-}
-
-let token: any;
 
 export async function createAllPrimaryIndexes() {
   const userBucketIndex = `CREATE PRIMARY INDEX ON Conduit1.blog.users`;
   const profileBucketIndex = `CREATE PRIMARY INDEX ON Conduit1.blog.profiles`;
   const articleBucketIndex = `CREATE PRIMARY INDEX ON Conduit1.blog.articles`;
   const commentBucketIndex = `CREATE PRIMARY INDEX ON Conduit1.blog.comments`;
-  console.log("MAYBE 1")
+  
   try {
     await cluster.query(userBucketIndex);
-    console.log("MAYBE 2")
   } catch (err) {
     if (err instanceof couchbase.IndexExistsError) {
       console.info("Users Bucket Index Creation: Index Already Exists");
@@ -132,14 +120,18 @@ export async function createAllPrimaryIndexes() {
 }
 await createAllPrimaryIndexes();
 
+/**** 
+ Description: Get a currently logged-in user 
+ Route: /api/user
+ Auth: YES
+ Response: returns a user
+****/
+
 app.get("/user", verifyJWT, async (req: Request, res: Response) => {
   const token = req.header("authorization")?.replace("Token ", "");
   const queryResult = await bucket
     .scope("blog")
     .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {})
-    .catch((err)=> {
-            console.log(err)
-        })
 
   const userId = queryResult["rows"][0].users.id;
   let getResult = { user: await usersCollection.get(userId)};
@@ -148,14 +140,18 @@ app.get("/user", verifyJWT, async (req: Request, res: Response) => {
   return res.status(201).json({ user: myUserObject });
 });
 
+/**** 
+ Description: Update a currently logged-in user 
+ Route: /api/user
+ Auth: YES
+ Response: returns a user
+****/
+
 app.put("/user", verifyJWT, async (req: Request, res: Response) => {
   const token = req.header("authorization")?.replace("Token ", "");
   const userQuery = await bucket
-    .scope("blog") //turn into template literal
+    .scope("blog")
     .query(`SELECT * FROM \`users\` WHERE token='${token}';`, {})
-    .catch((err)=> {
-        console.log(err)
-    })
 
   let databaseUser = userQuery["rows"][0].users;
   let inputData = req.body.user;
@@ -165,7 +161,7 @@ app.put("/user", verifyJWT, async (req: Request, res: Response) => {
     databaseUser[key] = inputData[key];
   });
 
-  const getResult = await usersCollection
+  await usersCollection
     .replace(databaseUser.id, databaseUser)
     .then(async (result: any) => {
       let updateUserResult = {
